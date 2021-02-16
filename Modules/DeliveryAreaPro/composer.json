@@ -1,0 +1,25 @@
+{
+    "name": "foodomaa/deliveryareapro",
+    "description": "",
+    "authors": [
+        {
+            "name": "StackCanyon",
+            "email": "stackcanyon@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\DeliveryAreaPro\\Providers\\DeliveryAreaProServiceProvider"
+            ],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\DeliveryAreaPro\\": ""
+        }
+    }
+}

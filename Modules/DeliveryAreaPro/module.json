@@ -1,0 +1,13 @@
+{
+    "name": "DeliveryAreaPro",
+    "alias": "deliveryareapro",
+    "description": "GeoFence stores by creating polygons using Google Maps",
+    "keywords": [],
+    "order": 0,
+    "providers": [
+        "Modules\\DeliveryAreaPro\\Providers\\DeliveryAreaProServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}

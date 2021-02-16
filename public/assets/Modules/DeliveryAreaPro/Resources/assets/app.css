@@ -1,0 +1,39 @@
+#areaMap {
+    height: 500px;
+    width: auto;
+    margin: 0;
+    padding: 0;
+}
+#dynamic_select {
+    height: 2.5rem;
+}
+.assigning-checkboxes label {
+    margin-right: 10px;
+    background-color: rgba(250, 250, 250, 0.3);
+    border-radius: 25px;
+    margin-bottom: 1.2rem;
+}
+.assigning-checkboxes label span {
+    text-align: center;
+    display: block;
+    padding: 8px 15px;
+    border: 1px solid #E0E0E0;
+    border-radius: 25px;
+    transition: 0.1s linear all;
+}
+.assigning-checkboxes label span:hover {
+    cursor: pointer;
+    border: 1px solid #9E9E9E;
+    transition: 0.1s linear all;
+}
+.assigning-checkboxes label input {
+    position: absolute;
+    top: -20px;
+    display: none;
+}
+.assigning-checkboxes input:checked+span {
+    background-color: #2ebf91;
+    padding: 8px 15px;
+    color: #fff;
+    border: 1px solid #eee;
+}
