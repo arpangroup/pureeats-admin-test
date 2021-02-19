@@ -1194,7 +1194,7 @@ class OrderController extends Controller
              //$items = Orderitem::where('order_id', $request->order_id)->get();
              return response()->json([
                  'success' => true,
-                 'order' => $order,
+                 'data' => $order,
              ]);
          }else{
              throw new ValidationException(ErrorCode::INVALID_AUTH_TOKEN, "Authentication Fail");
