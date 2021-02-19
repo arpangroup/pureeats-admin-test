@@ -5,12 +5,6 @@
 
     RewriteEngine On
 
-    # Redirect to non-WWW with HTTPs
-    RewriteCond %{HTTPS} off [OR]
-    RewriteCond %{HTTP_HOST} ^www\. [NC]
-    RewriteCond %{HTTP_HOST} ^(?:www\.)?(.+)$ [NC]
-    RewriteRule ^ https://%1%{REQUEST_URI} [L,NE,R=301]
-
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
@@ -25,3 +19,7 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+
+
+
