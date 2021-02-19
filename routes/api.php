@@ -305,3 +305,7 @@ Route::post('/delivery/login', [
     'uses' => 'DeliveryController@login',
 ]);
 /* END Auth Routes */
+
+
+
+
