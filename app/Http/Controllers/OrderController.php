@@ -1181,17 +1181,27 @@ class OrderController extends Controller
 
 
    
-    // public function getOrderDetails(Request $request)
-    // {
-    //     $user = auth()->user();
-    //     if ($user) {
+     public function getOrderDetails(Request $request)
+     {
+         $user = auth()->user();
+         if ($user) {
+             $order = Order::where('id', $request->order_id)
+                 ->with('orderitems', 'orderitems.order_item_addons', 'restaurant')->orderBy('id', 'DESC')
+                 ->first();
+             if($order == null)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "Invalid order_id" .$request->order_id);
 
-    //         $items = Orderitem::where('order_id', $request->order_id)->get();
-    //         return response()->json($items);
-    //     }
-    //     return response()->json(['success' => false], 401);
 
-    // }
+             //$items = Orderitem::where('order_id', $request->order_id)->get();
+             return response()->json([
+                 'success' => true,
+                 'order' => $order,
+             ]);
+         }else{
+             throw new ValidationException(ErrorCode::INVALID_AUTH_TOKEN, "Authentication Fail");
+         }
+
+
+     }
 
 
 

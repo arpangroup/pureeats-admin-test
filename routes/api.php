@@ -191,6 +191,9 @@ Route::group(['middleware' => ['jwt.auth']], function () {
     Route::post('/get-orders', [
         'uses' => 'OrderController@getOrders',
     ]);
+    Route::post('/get-order-details', [
+        'uses' => 'OrderController@getOrderDetails',
+    ]);
     Route::post('/get-order-items', [
         'uses' => 'OrderController@getOrderItems',
     ]);
