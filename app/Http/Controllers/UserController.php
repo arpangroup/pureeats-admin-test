@@ -523,7 +523,7 @@ class UserController extends Controller
                 }
 
                 if($request->pushToken){
-                    $this->saveToken($user->id, $pushToken);
+                    $this->saveToken($user->id, $request->pushToken);
                 }
 
                 $response = [
@@ -731,17 +731,20 @@ class UserController extends Controller
     public function getWalletTransactions(Request $request)
     {
         $user = auth()->user();
-        return response()->json($user);
         // $user = auth()->user();
         if ($user) {
             // $balance = sprintf('%.2f', $user->balanceFloat);
             $balance = $user->balanceFloat;
             $transactions = $user->transactions()->orderBy('id', 'DESC')->get();
 
+            $data = [
+                'balance' => $balance,
+                'transactions' => $transactions
+            ];
+
             $response = [
                 'success' => true,
-                'balance' => $balance,
-                'transactions' => $transactions,
+                'data' => $data,
             ];
             return response()->json($response);
         } else {
