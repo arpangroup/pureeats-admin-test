@@ -369,17 +369,26 @@ class UserController extends Controller
     /*---------------------------------------------------------------------------*/
 
     public function loginUsingOtp(Request $request){
+        Log::info('#############################################################');
+        Log::info('Inside loginUsingOtp()');
+        Log::info('#############################################################');
         if($request->phone && $request->otp){
             //  First check phone is valid  or not
             $user = \App\User::where('phone', $request->phone)->get()->first();
+            Log::info('IsRoleCustomer: ' .$user->hasRole('Customer'));
             if($user && $user->hasRole('Customer')){
                 if($user->is_active == 1){
+                    Log::info('IsActive: ' .$user->is_active);
+
                     $sms = new Sms();
+                    Log::info('Calling Verify OTP.....: ');
                     $verifyResponse = $sms->verifyOtp($request->phone, $request->otp);
                     if($verifyResponse['valid_otp'] == true){
+                        Log::info('OTP Verification: true');
                         $user->password = \Hash::make($request->otp);
                         $user->save();
 
+                        Log::info('OSaving push token......');
                         if($request->push_token){
                             $this->saveToken($user->id, $request->push_token);
                         }
@@ -389,6 +398,7 @@ class UserController extends Controller
                              $default_address = \App\Address::where('id', $user->default_address_id)->get()->first();
                          }
 
+                        Log::info('Fetch Running Orders.....');
                         //$running_order = null;
                         $running_orders = \App\Order::where('user_id', $user->id)
                         ->whereIn('orderstatus_id', ['1', '2', '3', '4', '7', '8'])
@@ -424,6 +434,8 @@ class UserController extends Controller
                 }
             }else{
                 if(!$user)throw new AuthenticationException(ErrorCode::PHONE_NOT_EXIST, "Customer not found for " .$request->phone);
+                if(!$user->hasRole('Customer'))throw new AuthenticationException(ErrorCode::BAD_REQUEST, "Invalid Role ");
+                throw new AuthenticationException(ErrorCode::BAD_RESPONSE, "Something error happened");
             }
 
 
