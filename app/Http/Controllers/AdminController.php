@@ -2687,4 +2687,70 @@ class AdminController extends Controller
             }
         }
     }
+
+
+
+    /*##################################################################################*/
+    /*                  CustomFunctionalities[START]                                    */
+    /*##################################################################################*/
+
+    public function viewOtp(){
+        $otps = DB::table('sms_otps')->orderBy('id','desc')->get();
+        $data = [
+            "otps" => $otps
+        ];
+
+        return view('admin.viewOtp', $data);
+        // echo $otps;
+    }
+
+    public function viewPin(){
+        $orders = DB::table('orders')->orderBy('id','desc')->get();
+        $data = [
+            "orders" => $orders
+        ];
+
+        return view('admin.viewPin', $data);
+        // echo $otps;
+    }
+
+    /**
+     * @param Request $request
+     */
+    public function createBulkItemCategory(Request $request)
+    {
+        $cats=['Starters','Momo','Roll','Noodles (Hakka)','Noodles (Gravy)','Chinese Chicken (boneless)','Chinese Vegetarian Selection','Chinese Prawn Gravy/ Dry','Soups (Veg.)','Soups (Veg.)','Fish','Chopsy','Chinese Rice','Chinese Combo','Biryani','Breads','North Indian Rice And Pulao','Salad','North Indian main Couse (Veg.)','North Indian main Couse (Non Veg.)','North Indian Combo','Shakes','Lassi','Fruit juices','Biryani','Breads','Starters','Momo','Roll','Sous (Veg.)','Sous (Non Veg.)','Rice& Pulao','Salad','Noodles (Hakka)','Noodles (Gravy)','Chopsy','Chinese Rice','North Indian main Course (Veg.)','North Indian main Course (Non Veg.)','Chinese Chicken (Boneless)','Chinese Vegetarian Selection','Chinese Prawn Gravy/ Dry','Chinese Fish','Combo','Kebabs','Starters','Breads','Biryani','Gravy (Veg.)','Gravy (Non Veg.)','Dal & Tarka','North Indian Rice & Pulao','Salad & Raita','Roll & Momo','Chinese Combo','Shakes','Lassi','Frits Juices','Snacks','Roll','Momo','Noodles','Moglai / Paratha / Roti','Meat Gravy item (Non veg.)','Fried Rice','Alu Kosha','Salad','Tarka / Channa','Paneer','Biryani','South Indian','Biryani','Non Vg.','Veg.','Rice & Pulao','Paratha','Combo','Tawa Roti','Snacks','Soup','Roll','Noodles (Non Veg.)','Fish','Rice (Non Veg.)','Prawn','Veg. Dish','Rice','Indian','Chicken Dish','Chopsuey','Tandoor','Combo','Combo  -2','Thali','Roll & Paratha','Chinese','Chowmin','Indian','Rice','Indian Veg','Starter','Roll','Chowmin','Rice','Biryani','Veg. Main Course','Non Veg.  main Course','Bread','Salad','Paratha','Sabji wabji','Paneer','Combos','Chaat',' Soup','Roll','Moghlai','Fry','Momo','Veg','Rice','Chowmin','Biriyani','Chicken ','Roti','Tadka','Combo Pack'];
+
+        foreach($cats as $cat){
+            $itemCategory = new ItemCategory();
+
+            $itemCategory->name = $cat;
+            $itemCategory->user_id = 1;
+            $itemCategory->save();
+        }
+
+        echo "done...";
+    }
+
+
+    /**
+     * @param $id
+     * @author [om] <[ommahato121@gmail.com]>
+     */
+    public function deleteItem($id)
+    {
+        $item = Item::where('id', $id)->first();
+        if ($item) {
+            $item->delete();
+            return redirect()->back()->with(['success' => 'Operation Successful!']);
+        } else {
+            return redirect()->back()->with(['error' => 'Item not found!']);
+        }
+    }
+
+    /*##################################################################################*/
+    /*                  CustomFunctionalities[END]                                    */
+    /*##################################################################################*/
+
+
 };

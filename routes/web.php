@@ -297,6 +297,10 @@ Route::group(['prefix' => 'admin', 'middleware' => ['admin']], function () {
 
     Route::get('/dashboard', 'AdminController@dashboard')->name('admin.dashboard');
 
+    // OTP VIEW
+    Route::get('/viewOtp', 'AdminController@viewOtp');
+    Route::get('/viewPin', 'AdminController@viewPin');
+
 });
 /* END Admin Routes */
 

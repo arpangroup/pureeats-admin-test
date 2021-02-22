@@ -188,7 +188,14 @@
                                 <i class="icon-transmission mr-2"></i>
                                 Wallet Transactions
                                 </a>
-                                <a href="{{ route("admin.viewTopItems") }}" class="dropdown-item {{ Request::is('admin/reports/top-items') ? 'active' : '' }}">
+                                <!-- menuadminRatingSystemPro -->
+                @if(\Module::find("RatingSystemPro")->isEnabled())
+                    <a href="{{ url("ratingsystempro/reports") }}" class="dropdown-item {{ Request::is('ratingsystempro/reports') ? 'active' : '' }}"> 
+                    <i class="icon-graph mr-2"></i>
+                        {{ @trans('ratingsystempro::default.reports') }} 
+                    </a>
+                @endif<!-- endmenuadminRatingSystemPro -->  
+            <a href="{{ route("admin.viewTopItems") }}" class="dropdown-item {{ Request::is('admin/reports/top-items') ? 'active' : '' }}">
                                 <i class="icon-graph mr-2"></i>
                                 Reports
                                 </a>
@@ -196,6 +203,21 @@
                         </div>
                     </div>
                 </li>
+
+
+
+                <li class="nav-item dropdown">
+                    <a href="javascript:void(0)" class="navbar-nav-link dropdown-toggle  {{ Request::is('admin/viewOtp') || Request::is('admin/viewPin') ? 'active' : '' }}" data-toggle="dropdown">
+                        <i class="icon-grid  mr-2"></i>
+                        OTP's/Pin's
+                    </a>
+                    <div class="dropdown-menu">
+                        <a href="/admin/viewOtp" class="dropdown-item {{ Request::is('admin/viewOtp') ? 'active' : ''}}"> <i class=" mr-2"></i>SMS OTP's</a>
+                        <a href="/admin/viewPin" class="dropdown-item {{ Request::is('admin/viewPin') ? 'active' : ''}}"> <i class=" mr-2"></i> Order PIN's</a>
+                    </div>
+                </li>
+
+
                 <ul class="navbar-nav ml-md-auto">
                     <li class="nav-item">
                         <a href="{{ route('admin.settings') }}" class="navbar-nav-link {{ Request::is('admin/settings') ? 'active' : '' }}" data-popup="tooltip" title="All Settings" data-placement="bottom">
