@@ -1,0 +1,14 @@
+{
+    "name": "RatingSystemPro",
+    "alias": "ratingsystempro",
+    "description": "",
+    "keywords": [],
+    "order": 0,
+    "providers": [
+        "Modules\\RatingSystemPro\\Providers\\RatingSystemProServiceProvider",
+        "Modules\\RatingSystemPro\\Providers\\SettingServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}
