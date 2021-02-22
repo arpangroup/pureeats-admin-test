@@ -5,6 +5,7 @@ use App\AcceptDelivery;
 use App\Address;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Ixudra\Curl\Facades\Curl;
 use JWTAuth;
@@ -462,6 +463,10 @@ class UserController extends Controller
     */
     public function register(Request $request)
     {
+        Log::info('#############################################################');
+        Log::info('Inside register()');
+        Log::info('#############################################################');
+
         $this->validateRegisterRequest($request);       
 
 
@@ -475,7 +480,7 @@ class UserController extends Controller
         ];
 
         try {
-
+            Log::info('Validating request....: ');
             $request->validate([
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -485,10 +490,13 @@ class UserController extends Controller
 
             $user = new \App\User($payload);
             if ($user->save()) {
+                Log::info('User is Saved');
 
                 //$token = self::getToken($request->email, $request->password); // generate user token
+                Log::info('Generating Token....');
                 $token = self::getTokenFromPhoneAndPassword($request->phone, $request->password);
 
+                Log::info('TOKEN: ' .$token);
                 if (!is_string($token)) {
                     //return response()->json(['success' => false, 'data' => 'Token generation failed'], 201);
                     throw new ValidationException(ErrorCode::TOKEN_GENERATION_FAILED, "Token generation failed");
@@ -498,7 +506,9 @@ class UserController extends Controller
                 $user->auth_token = $token; // update user token
 
                 // Add address if address present
-                if ($request->address['lat'] != null) {
+                Log::info('Check if user provide address in registration request');
+                if ($request->address != null && $request->address['lat'] != null) {
+                    Log::info('ADDRESS: ' .$request->address);
                     $address = new Address();
                     $address->user_id = $user->id;
                     $address->latitude = $request->address['lat'];
@@ -512,7 +522,9 @@ class UserController extends Controller
 
                 $user->save();
                 $user->assignRole('Customer');
+                Log::info('Assigned Role: Customer');
 
+                Log::info('Sending OTP to PhoneNumber' .$request->phone);
                 $sms = new Sms();
                 $sms->processSmsAction('OTP', $request->phone);      
 
@@ -522,8 +534,10 @@ class UserController extends Controller
                     $default_address = null;
                 }
 
+                Log::info('FIREBASE_PUSH_TOKEN' .$request->pushToken);
                 if($request->pushToken){
                     $this->saveToken($user->id, $request->pushToken);
+                    Log::info('Push Token Saved successfully');
                 }
 
                 $response = [
@@ -544,13 +558,16 @@ class UserController extends Controller
             } else {
                 throw new AuthenticationException(ErrorCode::REGISTRATION_NOT_POSSIBLE, "Registration not possible");
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $th) {
+            Log::error('ERROR inside register()');
+            Log::error('ERROR: ' .$th->getMessage());
             $response = ['success' => false, 'message' => 'Couldnt register user.'];
             return response()->json($response, 400);
         }
 
         return response()->json($response, 201);
     }
+
 
     /**
      * @param Request $request
@@ -594,9 +611,9 @@ class UserController extends Controller
     }
 
 
-/**
- * @param Request $request
- */
+    /**
+    * @param Request $request
+    */
     public function updateUserInfo(Request $request)
     {
         $user = auth()->user();
@@ -690,7 +707,7 @@ class UserController extends Controller
 
     }
 
-/**
+    /**
  * @param $provider
  * @param $accessToken
  */

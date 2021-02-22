@@ -472,13 +472,13 @@ class OrderController extends Controller
             $restaurant = Restaurant::where('id', $request->restaurant_id)->first(); 
             $newOrder->restaurant_id = $restaurant->id; 
            
-            if($request->pending_payment == true || $request->method == 'PAYTM' || $request['method'] == 'MERCADOPAGO') {
+            if($request->pending_payment == true || $request->payment_method == 'PAYTM' || $request['method'] == 'MERCADOPAGO') {
                 Log::channel('orderlog')->info('###### Inside Pending Payment');
                 $newOrder->orderstatus_id = '8'; // PENDING_PAYMENT
             }elseif ($restaurant->auto_acceptable) {
                 Log::channel('orderlog')->info('###### Inside AutoAcceptable');
                 $newOrder->orderstatus_id = '2';
-                $this->smsToDelivery($restaurant_id);
+                $this->smsToDelivery($request->restaurant_id);
                 if (config('settings.enablePushNotificationOrders') == 'true') {
                     //to user
                     $notify = new PushNotify();
@@ -724,7 +724,7 @@ class OrderController extends Controller
 
                 /* OneSignal Push Notification to Store Owner */
                 if ($newOrder->orderstatus_id == '1' && config('settings.oneSignalAppId') != null && config('settings.oneSignalRestApiKey') != null) {
-                    $this->sendPushNotificationStoreOwner($restaurant_id);
+                    $this->sendPushNotificationStoreOwner($request->restaurant_id);
                 }
                 /* END OneSignal Push Notification to Store Owner */
 
