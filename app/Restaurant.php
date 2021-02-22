@@ -28,7 +28,14 @@ class Restaurant extends Model implements Sortable
     /**
      * @var array
      */
-    protected $hidden = array('created_at', 'updated_at');
+     protected $hidden = array('created_at', 'updated_at');
+                
+        /*addisRatingStoreCode*/
+        public function getRatingAttribute()
+        {
+            return \Modules\RatingSystemPro\Entities\RatingStore::where('restaurant_id', $this->id)->average('rating');
+        }
+        /*endaddisRatingStoreCode*/
 
     public static function boot()
     {
@@ -125,7 +132,13 @@ class Restaurant extends Model implements Sortable
         return $this->belongsToMany(User::class);
     }
 
-    public function payment_gateways()
+    /*addRelationshipCode*/ 
+        public function ratings()
+        {
+            return $this->belongsToMany(\Modules\RatingSystemPro\Entities\RatingStore::class);
+        }
+        /*endaddRelationshipCode*/
+public function payment_gateways()
     {
         return $this->belongsToMany(\App\PaymentGateway::class);
     }

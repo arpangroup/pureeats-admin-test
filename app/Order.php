@@ -68,6 +68,29 @@ class Order extends Model
     public function accept_delivery()
     {
         return $this->hasOne('App\AcceptDelivery');
+        }
+                
+        /*addisRatingCode*/
+        protected $appends = ['isRating', 'isRatingDeliveryGuy'];
+    
+        public function getIsRatingAttribute()
+        {
+            if(!auth()->check()) {
+                return false;
+            }
+    
+            return !empty(\Modules\RatingSystemPro\Entities\RatingStore::where('order_id', $this->id)->where('restaurant_id', $this->restaurant_id)->where('user_id', auth()->user()->id)->first());
+        }
+    
+        public function getIsRatingDeliveryGuyAttribute()
+        {
+            if(!auth()->check()) {
+                return false;
+            }
+    
+            if(isset($this->accept_delivery->user_id)) {
+                return !empty(\Modules\RatingSystemPro\Entities\RatingDeliveryGuy::where('order_id', $this->id)->where('delivery_guy_id', $this->accept_delivery->user_id)->where('user_id', auth()->user()->id)->first());
+            }
     }
 
 }

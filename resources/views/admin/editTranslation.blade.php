@@ -2214,7 +2214,52 @@
                         <input type="text" class="form-control form-control-lg" name="offlineSubTitleMessage" value="@if (!empty($data->offlineSubTitleMessage)) {{ $data->offlineSubTitleMessage }}@else{{ config('settings.offlineSubTitleMessage') }}@endif" placeholder="Offline Sub-Title Message">
                     </div>
                 </div>
-                <!-- END OfflineMode Screen Setting -->
+                <!-- END OfflineMode Screen Setting --> 
+        <!-- moduleAdminTranslateRatingSystemPro --> 
+        <div class="module">
+                    <button class="btn btn-primary translation-section-btn mt-4" type="button"> <i class="icon-mobile mr-1"></i>Rating System Pro</button>
+                    <div class="form-group row">
+                        <label class="col-lg-3 col-form-label"><strong>Restaurant Rating</strong></label>
+                        <div class="col-lg-9">
+                            <input type="text" class="form-control form-control-lg" name="RestaurantRating"
+                                   value="@if (!empty($data->RestaurantRating)) {{ $data->RestaurantRating }}@else{{ config('settings.RestaurantRating') }}@endif"
+                                   placeholder="Restaurant Rating">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-lg-3 col-form-label"><strong>Text qualification for restaurant</strong></label>
+                        <div class="col-lg-9">
+                            <input type="text" class="form-control form-control-lg" name="LeaveQualification"
+                                   value="@if (!empty($data->LeaveQualification)) {{ $data->LeaveQualification }}@else{{ config('settings.LeaveQualification') }}@endif"
+                                   placeholder="Leave a qualification for the restaurant below">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-lg-3 col-form-label"><strong>Text qualification for Delivery Guy</strong></label>
+                        <div class="col-lg-9">
+                            <input type="text" class="form-control form-control-lg" name="LeaveQualificationDeliveryGuy"
+                                   value="@if (!empty($data->LeaveQualificationDeliveryGuy)) {{ $data->LeaveQualificationDeliveryGuy }}@else{{ config('settings.LeaveQualificationDeliveryGuy') }}@endif"
+                                   placeholder="Leave a qualification for the Delivery Guy below">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-lg-3 col-form-label"><strong>Delivery Guy Rating</strong></label>
+                        <div class="col-lg-9">
+                            <input type="text" class="form-control form-control-lg" name="DeliveryGuyRating"
+                                   value="@if (!empty($data->DeliveryGuyRating)) {{ $data->DeliveryGuyRating }}@else{{ config('settings.DeliveryGuyRating') }}@endif"
+                                   placeholder="Delivery Guy Rating">
+                        </div>
+                    </div>       
+                    <div class="form-group row">
+                        <label class="col-lg-3 col-form-label"><strong>SAVE</strong></label>
+                        <div class="col-lg-9">
+                            <input type="text" class="form-control form-control-lg" name="SAVE"
+                                   value="@if (!empty($data->SAVE)) {{ $data->SAVE }}@else{{ config('settings.SAVE') }}@endif"
+                                   placeholder="SAVE">
+                        </div>
+                    </div>                 
+                </div>
+        <!-- endmoduleAdminControllerRatingSystemPro --> 
                 <!-- END MOBILE -->
                 @csrf
                 <div class="text-right">
