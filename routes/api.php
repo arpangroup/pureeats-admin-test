@@ -2,6 +2,19 @@
 
 use Illuminate\Http\Request;
 
+//GET http://159.89.160.182/api/employees
+//GET http://159.89.160.182/api/employees/{empId}
+//POST http://159.89.160.182/api/employees/create
+//GET http://159.89.160.182/api/employees/delete/1
+
+
+Route::get('/employees', [ 'uses' => 'DemoController@getEmployees',]);
+Route::get('/employees/{empId}', ['uses' => 'DemoController@getEmployeeById',]);
+Route::post('/employees/create', ['uses' => 'DemoController@createEmployee',]);
+Route::get('/employees/delete/{empId}', ['uses' => 'DemoController@deleteEmployee',]);
+
+
+
 /* API ROUTES */
 
 Route::get('/test', [
