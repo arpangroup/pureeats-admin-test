@@ -461,7 +461,7 @@ class RestaurantController extends Controller
     /**
      * @param Request $request
      */
-    public function getRestaurantInfoAndOperationalStatus(Request $request)
+    public function getRestaurantInfoAndOperationalStatusOld(Request $request)
     {
         $restaurant = Restaurant::where('id', $request->restaurant_id)->with('payment_gateways_active')->first();
         //if($request->payment_method == 'COD') throw new ValidationException(ErrorCode::UNSUPPORTED_PAYMENT_METHOD, "Cash on delivery is not valid for orders above ₹350. Please pay online to proceed");
@@ -530,7 +530,32 @@ class RestaurantController extends Controller
         }
 
     }
-    
+
+
+
+    /**
+     * @param Request $request
+     */
+    public function getRestaurantInfoAndOperationalStatus(Request $request)
+    {
+        $restaurant = Restaurant::where('id', $request->restaurant_id)->with('payment_gateways_active')->first();
+        //if($request->payment_method == 'COD') throw new ValidationException(ErrorCode::UNSUPPORTED_PAYMENT_METHOD, "Cash on delivery is not valid for orders above ₹350. Please pay online to proceed");
+
+        if ($restaurant) {
+            $restaurant->makeHidden(['delivery_areas', 'location_id', 'schedule_data']);
+            return response()->json([
+                'success' => true,
+                'message' => 'operational',
+                'data' => $restaurant,
+                'code' => '',
+            ]);
+        } else {
+            throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, 'Restaurant ID not passed or not found.');
+        }
+
+    }
+
+
     /**
      * @param $slug
      */
