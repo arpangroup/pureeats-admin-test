@@ -41,4 +41,5 @@ class DemoController extends Controller
             'message' => "Delete Successfull",
         ]);
     }
+
 };
