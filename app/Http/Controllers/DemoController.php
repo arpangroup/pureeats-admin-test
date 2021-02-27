@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class DemoController extends Controller
 {
-    public function getEmployee(){
+    public function getEmployees(){
         $employees = Employee::all();
          return response()->json($employees);
     }
