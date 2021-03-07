@@ -842,6 +842,9 @@ class RestaurantController extends Controller
                 //$query->select('name', 'code')->get();
                 //$query->take(1);
             }])
+            ->with(['payment_gateways_active' => function($query){
+                //$query->select('id', 'name')->get();
+            }])
             ->first();
         $restaurant['schedule'] = $this->getScheduleData($restaurant);
        

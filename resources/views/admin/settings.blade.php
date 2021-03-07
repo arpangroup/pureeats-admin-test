@@ -1866,6 +1866,44 @@
                                             placeholder="Paytm Channel ID (For Website)">
                                     </div>
                                 </div>
+
+                                <hr>
+
+                                <h2> <img src="{{url("/")}}/assets/img/various/upi.png" alt="Paytm" style="width: 48px"> UPI</h2>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Merchant UPI ID(pa):</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="upi_merchant_id"
+                                               value="{{ config('settings.upi_merchant_id') }}"
+                                               placeholder="Ex:8777630556@okbizaxis">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Merchant Name(pn):</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="upi_merchant_name"
+                                               value="{{ config('settings.upi_merchant_name') }}"
+                                               placeholder="Ex: Pure Eats">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Merchant Code(mc):</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="upi_merchant_code"
+                                               value="{{ config('settings.upi_merchant_code') }}"
+                                               placeholder="Leave blank if you dont know">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Transaction Note(tn):</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="upi_transaction_note"
+                                               value="{{ config('settings.upi_transaction_note') }}"
+                                               placeholder="Ex: Payment for PureEats">
+                                    </div>
+                                </div>
+
+
                             </div>
                             <div class="tab-pane fade" id="smsGatewaySettings">
                                 <legend class="font-weight-semibold text-uppercase font-size-sm">
