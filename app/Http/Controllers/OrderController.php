@@ -147,7 +147,7 @@ class OrderController extends Controller
         $this->validateOrderRequest($request, $user);
         
         try{
-            Log::channel('orderlog')->info('USER: ' .json_encode($request->all()));
+            Log::channel('orderlog')->info('REQUEST_BODY: ' .json_encode($request->all()));
             $keys = ['orderPaymentWalletComment', 'orderPartialPaymentWalletComment'];
             $translationData = $translationHelper->getDefaultLanguageValuesForKeys($keys);
 
@@ -162,7 +162,7 @@ class OrderController extends Controller
             $newOrder->address = $request->full_address;
             //$newOrder->transaction_id = $request->payment_token; //NEW           
             $newOrder->order_comment = $request->order_comment;
-            $newOrder->payment_mode = $request->payment_method;
+            $newOrder->payment_mode = $request->payment_mode;
             $newOrder->delivery_type = 2;
             if ($request->delivery_type == 1) $newOrder->delivery_type = 1;
             $user->delivery_pin = strtoupper(str_random(5));
@@ -192,8 +192,8 @@ class OrderController extends Controller
             Log::channel('orderlog')->info('###### Calculate OrderTotal........');
             $orderTotal = 0;
             foreach ($request['order_items'] as $oI) {
-                $originalItem = Item::where('id', $oI['itemId'])->first();
-                $orderTotal += ($originalItem->price * $oI['qty']);
+                $originalItem = Item::where('id', $oI['id'])->first();
+                $orderTotal += ($originalItem->price * $oI['quantity']);
 
                 if (isset($oI['selectedaddons'])) {
                     foreach ($oI['selectedaddons'] as $selectedaddon) {
@@ -210,15 +210,15 @@ class OrderController extends Controller
 
 
             // RestaurantCharge based on orderAmount
-            Log::channel('orderlog')->info('###### Calculate RestaurantCharge........');
+            Log::channel('orderlog')->info('###### Calculate StoreCharge........');
             $restaurantCharge = 0;//2%=>10==>10
             if($restaurant->restaurant_charges){
                 //$restaurant_charge = $this->calculateRestaurantCharge($restaurant, $orderTotal);
                 $restaurantCharge = (float) (((float) $restaurant->restaurant_charges / 100) * $orderTotal);
                 //$newOrder->restaurant_charge_in_percentage = (float)$restaurant->restaurant_charges; //NEW 
                 $newOrder->restaurant_charge = $restaurantCharge;
-                Log::channel('orderlog')->info('###### RestaurantCharge: ' .$restaurant->restaurant_charges);
-                Log::channel('orderlog')->info('###### RestaurantChargeApplied: ' .$restaurantCharge);
+                Log::channel('orderlog')->info('###### StoreChargePercentage: ' .$restaurant->restaurant_charges);
+                Log::channel('orderlog')->info('###### StoreChargeApplied: ' .$restaurantCharge);
             }
            
 
@@ -277,9 +277,12 @@ class OrderController extends Controller
             Log::channel('orderlog')->info('###### Calculating DeliveryCharge.....');
             if ($request->delivery_type == 1) {
                 if ($restaurant->delivery_charge_type == 'DYNAMIC') {
+                    Log::channel('orderlog')->info("DYNAMIC deliveryCharge enabled");
                     //get distance between user and restaurant,                    
                     if (config('settings.enGDMA') == 'true') {
-                        Log::channel('orderlog')->info('Google distance matrix enabled, distance: '.(float) $request->distance);
+                        Log::channel('orderlog')->info('Google distance matrix enabled, distance: '.(float) $request->delivery_distance);
+                        Log::channel('orderlog')->info("****Note:  create custom function to calculate the distance from backend and store on DB, to avoid extra pricing");
+                        /* Make custom function to calculate the distance and store on DB, to avoid extra pricing*/
                         $distance = (float) $request->distance;
                     } else {
                         Log::channel('orderlog')->info('Google distance matrix not enabled');
@@ -290,6 +293,7 @@ class OrderController extends Controller
                     }
 
                     if ($distance > $restaurant->base_delivery_distance) {
+                        Log::channel('orderlog')->info('Distance is more than baseDistance ');
                         $extraDistance = $distance - $restaurant->base_delivery_distance;
                         $extraCharge = ($extraDistance / $restaurant->extra_delivery_distance) * $restaurant->extra_delivery_charge;
                         $dynamicDeliveryCharge = $restaurant->base_delivery_charge + $extraCharge;
@@ -304,24 +308,29 @@ class OrderController extends Controller
                         $newOrder->delivery_charge = $dynamicDeliveryCharge;
                         $orderTotal = $orderTotal + $dynamicDeliveryCharge;
                     } else {
+                        Log::channel('orderlog')->info('Applying base delivery charge');
                         $newOrder->delivery_charge = $restaurant->base_delivery_charge;
                         $orderTotal = $orderTotal + $restaurant->base_delivery_charge;
+                        Log::channel('orderlog')->info('DeliveryCharge: ' .$newOrder->delivery_charge);
                     }
 
-                } else {                    
+                } else {
+                    Log::channel('orderlog')->info("FIXED deliveryCharge enabled");
                     $newOrder->delivery_charge = $restaurant->delivery_charges;
                     $orderTotal = $orderTotal + $restaurant->delivery_charges;
+                    Log::channel('orderlog')->info('DeliveryCharge: ' .$newOrder->delivery_charge);
                 }
 
             } else {
+                Log::channel('orderlog')->info("SelfPickup Order, so deliveryCharge: 0");
                 $newOrder->delivery_charge = 0;
             }
 
             //DriverTipAmount:
-            if (isset($request['tipAmount']) && !empty($request['tipAmount'])) {
-                Log::channel('orderlog')->info('tipAmount: ' .$request['tipAmount'] .' Current Total: ' .$orderTotal);
-                $orderTotal = $orderTotal + $request['tipAmount'];
-                $newOrder->tip_amount = $request['tipAmount'];
+            if (isset($request['tip_amount']) && !empty($request['tip_amount'])) {
+                Log::channel('orderlog')->info('tipAmount: ' .$request['tip_amount'] .' Current Total: ' .$orderTotal);
+                $orderTotal = $orderTotal + $request['tip_amount'];
+                $newOrder->tip_amount = $request['tip_amount'];
                 Log::channel('orderlog')->info('After apply tipAmount Total: '.$orderTotal);
             }
 
@@ -349,12 +358,13 @@ class OrderController extends Controller
             Log::channel('orderlog')->info('Saving order........');
             $newOrder->save();
 
+            Log::channel('orderlog')->info('Saving order_items........');
             foreach ($request['order_items'] as $orderItem) {
                 $item = new Orderitem();
                 $item->order_id = $newOrder->id;
-                $item->item_id = $orderItem['itemId'];
-                $item->name = $orderItem['itemName'];
-                $item->quantity = $orderItem['qty'];
+                $item->item_id = $orderItem['id'];
+                $item->name = $orderItem['name'];
+                $item->quantity = $orderItem['quantity'];
                 $item->price = $orderItem['price'];
                 $item->save();
                 if (isset($orderItem['selectedaddons'])) {
@@ -427,7 +437,7 @@ class OrderController extends Controller
                 'razorpay_success' => false,
                 'message' => $th->getMessage(),
             ];
-            //return response()->json($response);
+            //return response()->json($reInside placeOrder()  sponse);
             return $response;
         }
     }
@@ -449,7 +459,7 @@ class OrderController extends Controller
 
 
         if ($user) {
-            Log::channel('orderlog')->info('USER: ' .json_encode($request->all()));
+            Log::channel('orderlog')->info('REQUEST: ' .json_encode($request->all()));
             $keys = ['orderPaymentWalletComment', 'orderPartialPaymentWalletComment'];
             $translationData = $translationHelper->getDefaultLanguageValuesForKeys($keys);
 
@@ -494,7 +504,7 @@ class OrderController extends Controller
             Log::channel('orderlog')->info('###### Calculate OrderTotal........');
             $orderTotal = 0;
             foreach ($request['order_items'] as $oI) {
-                $originalItem = Item::where('id', $oI['itemId'])->first();
+                $originalItem = Item::where('id', $oI['id'])->first();
                 $orderTotal += ($originalItem->price * $oI['qty']);
 
                 if (isset($oI['selectedaddons'])) {
