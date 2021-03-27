@@ -276,8 +276,12 @@ class RatingController extends Controller
      * @param $restaurantId
      */
     public function getRestaurantRatings($restaurantId){
-        $restaurantRatings = Restaurant::where('id', $restaurantId)->with('ratings')->first();
-        return response()->json($restaurantRatings);
+        $restaurant = Restaurant::where('id', $restaurantId)->with('ratings')->first();
+        $ratings = [];
+        if($restaurant){
+            $ratings = $restaurant->ratings;
+        }
+        return response()->json($ratings);
     }
 
 
@@ -285,7 +289,11 @@ class RatingController extends Controller
      * @param $driverId
      */
     public function getDriverRatings($driverId){
-        $driverRatings = User::where('id', $driverId)->with('ratings')->first();
-        return response()->json($driverRatings);
+        $driver = User::where('id', $driverId)->with('ratings')->first();
+        $ratings = [];
+        if($driver){
+            $ratings = $driver->ratings;
+        }
+        return response()->json($ratings);
     }
 }
