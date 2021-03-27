@@ -10,6 +10,7 @@ use App\User;
 use DB;
 use Illuminate\Contracts\Cache\Factory;
 use Illuminate\Http\Request;
+use Modules\RatingSystemPro\Entities\RatingDeliveryGuy;
 use Modules\RatingSystemPro\Entities\RatingStore;
 
 class RatingController extends Controller
@@ -276,11 +277,9 @@ class RatingController extends Controller
      * @param $restaurantId
      */
     public function getRestaurantRatings($restaurantId){
-        $restaurant = Restaurant::where('id', $restaurantId)->with('ratings')->first();
-        $ratings = [];
-        if($restaurant){
-            $ratings = $restaurant->ratings;
-        }
+        $ratings = RatingStore::where("restaurant_id", $restaurantId)
+                ->with('user:id,name,avatar', 'restaurant:id,slug,name,address,image')
+                ->get();
         return response()->json($ratings);
     }
 
@@ -289,11 +288,9 @@ class RatingController extends Controller
      * @param $driverId
      */
     public function getDriverRatings($driverId){
-        $driver = User::where('id', $driverId)->with('ratings')->first();
-        $ratings = [];
-        if($driver){
-            $ratings = $driver->ratings;
-        }
+        $ratings = RatingDeliveryGuy::where("delivery_guy_id", $driverId)
+            ->with('user:id,name,avatar', 'restaurant:id,slug,name,address,image')
+            ->get();
         return response()->json($ratings);
     }
 }
