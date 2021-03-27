@@ -82,6 +82,7 @@ class RatingController extends Controller
                 $rating->order_id = $order->id;
                 $rating->user_id = $user->id;
                 $rating->rating = $request->restaurant_rating;
+                $rating->tags = $request->restaurant_tags;
                 $rating->comment = $request->restaurant_comment;
                 $restaurant->ratings()->save($rating);
 
@@ -96,6 +97,7 @@ class RatingController extends Controller
                 $rating->order_id = $order->id;
                 $rating->user_id = $user->id;
                 $rating->rating = $request->delivery_rating;
+                $rating->tags = $request->delivery_tags;
                 $rating->comment = $request->delivery_comment;
                 $deliveryGuy->ratings()->save($rating);
 

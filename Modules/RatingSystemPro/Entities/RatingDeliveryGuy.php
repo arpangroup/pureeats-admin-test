@@ -15,6 +15,7 @@ class RatingDeliveryGuy extends Model
         'user_id',
         'rating',
         'comment',
+        'tags'
     ];
 
     /**
