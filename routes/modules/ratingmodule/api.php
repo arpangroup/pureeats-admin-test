@@ -1,5 +1,12 @@
 <?php
 
+Route::get('/get-restaurant-ratings/{restaurantId}', [
+    'uses' => 'RatingController@getRestaurantRatings',
+]);
+Route::get('/get-driver-ratings/{driverId}', [
+    'uses' => 'RatingController@getDriverRatings',
+]);
+
 Route::group(['middleware' => ['jwt.auth']], function () {
 
     Route::post('/get-ratable-order', [

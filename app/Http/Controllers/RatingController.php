@@ -10,6 +10,7 @@ use App\User;
 use DB;
 use Illuminate\Contracts\Cache\Factory;
 use Illuminate\Http\Request;
+use Modules\RatingSystemPro\Entities\RatingStore;
 
 class RatingController extends Controller
 {
@@ -63,7 +64,9 @@ class RatingController extends Controller
      */
     public function saveNewRating(Request $request)
     {
+        //return response()->json( ['success' => "hello world",]);
         $user = User::where('id', $request->user_id)->first();
+
 
         if ($user) {
             //find the restaurant
@@ -72,21 +75,27 @@ class RatingController extends Controller
 
                 //rating the restaurant
                 $restaurant = Restaurant::where('id', $order->restaurant_id)->first();
-                $rating = new \willvincent\Rateable\Rating;
-                $rating->rating = $request->restaurant_rating;
-                $rating->comment = $request->comment;
-                $rating->user_id = $user->id;
+                //$rating = new \willvincent\Rateable\Rating;
+                $rating = new \Modules\RatingSystemPro\Entities\RatingStore;
+                $rating->restaurant_id =$restaurant->id;
                 $rating->order_id = $order->id;
+                $rating->user_id = $user->id;
+                $rating->rating = $request->restaurant_rating;
+                $rating->comment = $request->restaurant_comment;
                 $restaurant->ratings()->save($rating);
+
+
 
                 //rating the delivery guy
                 $deliveryGuy = AcceptDelivery::where('order_id', $order->id)->first();
                 $deliveryGuy = User::where('id', $deliveryGuy->user_id)->first();
-                $rating = new \willvincent\Rateable\Rating;
-                $rating->rating = $request->delivery_rating;
-                $rating->comment = $request->comment;
-                $rating->user_id = $user->id;
+                //$rating = new \willvincent\Rateable\Rating;
+                $rating = new \Modules\RatingSystemPro\Entities\RatingDeliveryGuy;
+                $rating->delivery_guy_id = $deliveryGuy->id;
                 $rating->order_id = $order->id;
+                $rating->user_id = $user->id;
+                $rating->rating = $request->delivery_rating;
+                $rating->comment = $request->delivery_comment;
                 $deliveryGuy->ratings()->save($rating);
 
                 $response = [
@@ -261,5 +270,22 @@ class RatingController extends Controller
         } else {
             return redirect()->route('admin.ratings');
         }
+    }
+
+    /**
+     * @param $restaurantId
+     */
+    public function getRestaurantRatings($restaurantId){
+        $restaurantRatings = Restaurant::where('id', $restaurantId)->with('ratings')->first();
+        return response()->json($restaurantRatings);
+    }
+
+
+    /**
+     * @param $driverId
+     */
+    public function getDriverRatings($driverId){
+        $driverRatings = User::where('id', $driverId)->with('ratings')->first();
+        return response()->json($driverRatings);
     }
 }

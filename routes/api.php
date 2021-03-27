@@ -20,6 +20,10 @@ Route::get('/employees/delete/{empId}', ['uses' => 'DemoController@deleteEmploye
 Route::get('/test', [
     'uses' => 'SettingController@getSettings',
 ]);
+//Route::get('/test',function(){
+//    return "hello";
+//});
+
 
 Route::post('/coordinate-to-address', [
     'uses' => 'GeocoderController@coordinatesToAddress',
@@ -81,6 +85,11 @@ Route::post('/get-restaurant-info-and-operational-status', [
 Route::post('/get-restaurant-items/{slug}', [
     'uses' => 'RestaurantController@getRestaurantItems',
 ]);
+
+
+
+
+
 
 Route::post('/get-pages', [
     'uses' => 'PageController@getPages',
@@ -318,6 +327,7 @@ Route::post('/delivery/login', [
     'uses' => 'DeliveryController@login',
 ]);
 /* END Auth Routes */
+
 
 
 

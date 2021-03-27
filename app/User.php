@@ -93,4 +93,12 @@ class User extends Authenticatable implements JWTSubject, Wallet, WalletFloat
         $this->is_active = !$this->is_active;
         return $this;
     }
+
+
+    /*addRelationshipCode*/
+    public function ratings()
+    {
+        return $this->belongsToMany(\Modules\RatingSystemPro\Entities\RatingDeliveryGuy::class);
+    }
+    /*endaddRelationshipCode*/
 }
