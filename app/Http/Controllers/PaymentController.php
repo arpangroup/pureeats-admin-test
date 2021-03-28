@@ -174,6 +174,8 @@ class PaymentController extends Controller
 
 
                 $response = json_decode($response, true);//amount,amount_paid,amount_due
+                //json_encode($request->all())
+                Log::channel('orderlog')->info($response);
                 // return $order->payable;
                 //return $response['amount_due'] /100;
 
@@ -182,6 +184,9 @@ class PaymentController extends Controller
                     Log::channel('orderlog')->info('ORDER: '.$order);
                     throw new ValidationException(ErrorCode::BAD_REQUEST, "BAD_REQUEST_ERROR: Razorpay order status");
                 }
+
+
+
                 if($response['amount_due'] == 0){
                     $restaurant = Restaurant::where('id', $order->restaurant_id)->first();
 
