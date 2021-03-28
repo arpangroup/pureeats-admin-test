@@ -162,7 +162,7 @@ class OrderController extends Controller
             $newOrder->address = $request->full_address;
             //$newOrder->transaction_id = $request->payment_token; //NEW           
             $newOrder->order_comment = $request->order_comment;
-            $newOrder->payment_mode = $request->payment_method;
+            $newOrder->payment_mode = $request->payment_mode;
             $newOrder->delivery_type = 2;
             if ($request->delivery_type == 1) $newOrder->delivery_type = 1;
             $user->delivery_pin = strtoupper(str_random(5));
@@ -170,7 +170,7 @@ class OrderController extends Controller
             $restaurant = Restaurant::where('id', $request->restaurant_id)->first(); 
             $newOrder->restaurant_id = $restaurant->id; 
            
-            if($request->payment_method == 'COD' || $request->payment_method == 'WALLET'){
+            if($request->payment_mode == 'COD' || $request->payment_mode == 'WALLET'){
                 $newOrder->orderstatus_id = '1';
                 if ($restaurant->auto_acceptable) {
                     Log::channel('orderlog')->info('restaurant is auto accepble, so set orderstatus_id = 2');
@@ -184,7 +184,7 @@ class OrderController extends Controller
                     }
                     //$this->sendPushNotificationStoreOwner($order->restaurant_id);
                 }
-            }else if($request->payment_method == 'GOOGLE_PAY' || $request->payment_method == 'PHONEPAY' || $request->payment_method == 'PAYTM' || $request->payment_method == 'UPI'){
+            }else if($request->payment_mode == 'GOOGLE_PAY' || $request->payment_mode == 'PHONEPAY' || $request->payment_mode == 'PAYTM' || $request->payment_mode == 'UPI'){
                 $newOrder->orderstatus_id = '8';
             }else {
                 $newOrder->orderstatus_id = '8';
@@ -393,13 +393,13 @@ class OrderController extends Controller
 
             /* ################################# START_PAYMENT ##################################################*/
             Log::channel('orderlog')->info('Start payment processing...........');
-            if($request->payment_method == 'PAYTM'){
+            if($request->payment_mode == 'PAYTM'){
                 Log::channel('orderlog')->info('Generating checksum for paytm...........');
                 $response['data']['paytm_checksum'] = $this->generatePaytmChecksum($newOrder->unique_order_id);
                 Log::channel('orderlog')->info('PAYTM_CHECKSUM: ' .$response['data']['paytm_checksum']);
-            }else if($request->payment_method == 'GOOGLE_PAY' || $request->payment_method == 'PHONEPAY' || $request->payment_method == 'UPI'){
-                Log::channel('orderlog')->info('Payment method:' .$request->payment_method);
-            }else if($request->payment_method == 'RAZORPAY'){
+            }else if($request->payment_mode == 'GOOGLE_PAY' || $request->payment_mode == 'PHONEPAY' || $request->payment_mode == 'UPI'){
+                Log::channel('orderlog')->info('Payment method:' .$request->payment_mode);
+            }else if($request->payment_mode == 'RAZORPAY'){
                 $razorPayResponse = $this->generateRazorPayOrderId($newOrder->payable);
                 //return  $razorPayResponse;
                 if($razorPayResponse['razorpay_success'] == true && isset($razorPayResponse['response']->id) ){                   
