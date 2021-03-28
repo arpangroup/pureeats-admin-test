@@ -870,8 +870,8 @@ class PaymentController extends Controller
         if($request->order_id){
             if($request->payment_method == "RAZORPAY"){
                 // validate RazorPay Payment request
-                if($request->razorpayPaymentID == null)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "invalid razorpayPaymentID");
-                if($request->razorPayOrderId == null)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "invalid razorPayOrderId");
+                //if($request->razorpayPaymentID == null)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "invalid razorpayPaymentID");
+                //if($request->razorPayOrderId == null)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "invalid razorPayOrderId");
                 return $this->verifyRazorpayPayment($request, new TranslationHelper());
             }else if($request->payment_method == "GOOGLE_PAY" || $request->payment_method == "PHONEPAY" || $request->payment_method == "PAYTM" || $request->payment_method == "UPI"){
                 if($request->transactionId == null)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "invalid transactionId");
