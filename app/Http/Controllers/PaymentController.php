@@ -168,7 +168,7 @@ class PaymentController extends Controller
             try {
                 //$response = Curl::to('https://api.razorpay.com/v1/orders/order_GYzdkmKNYJdwIZ/payments')
                 //$order->rzp_order_id
-                $response = Curl::to('https://api.razorpay.com/v1/orders/'.$request->razorPayOrderId)
+                $response = Curl::to('https://api.razorpay.com/v1/orders/'.$order->rzp_order_id)
                 ->withOption('USERPWD', "$api_key:$api_secret")
                 ->get();
 
