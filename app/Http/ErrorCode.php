@@ -43,6 +43,10 @@ class ErrorCode{
     const ORDER_AMOUNT_NOT_PERMIT = 'E2014';
     const RESTAURANT_NOT_OPERATIONAL = 'E2015';
 
+
+    //Payment
+    const UPI_PAYMENT_VERIFICATION_FAILED = 'E5001';
+
 }
 
 ?>

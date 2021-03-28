@@ -23,6 +23,8 @@ use ErrorCode;
 use App\Exceptions\AuthenticationException;
 use App\Exceptions\ValidationException;
 
+use PaytmChecksumHelper;
+
 class PaymentController extends Controller
 {
     public function getPaymentGateways(Request $request)
@@ -64,13 +66,89 @@ class PaymentController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     */
+    private function verifyUpiPayment(Request $request, TranslationHelper $translationHelper){
+        Log::channel('orderlog')->info('Inside verifyUpiPayment...........');
+        Log::channel('orderlog')->info('REQUEST: ' .json_encode($request->all()));
+
+        $keys = ['orderPaymentWalletComment', 'orderPartialPaymentWalletComment'];
+        $translationData = $translationHelper->getDefaultLanguageValuesForKeys($keys);
+        $order = Order::where('id', $request->order_id)
+            ->where('orderstatus_id', '8')
+            //->where('payment_mode', 'RAZORPAY')
+            ->first();
+        Log::channel('orderlog')->info('ORDER: '.$order);
+
+        if($order){
+            try{
+                if($request->transactionStatus == 'SUCCESS'){
+                    // process the payment
+                    $restaurant = Restaurant::where('id', $order->restaurant_id)->first();
+
+                    if ($restaurant->auto_acceptable) {
+                        Log::channel('orderlog')->info('restaurant is auto acceptable, so set orderstatus_id = 2');
+                        $orderstatus_id = '2';
+                        if (config('settings.enablePushNotificationOrders') == 'true') {
+                            Log::channel('orderlog')->info('send push notification to user');
+                            //to user
+                            $notify = new PushNotify();
+                            $notify->sendPushNotification('2', $order->user_id, $order->unique_order_id);
+                        }
+                        //$this->sendPushNotificationStoreOwner($order->restaurant_id);
+                    } else {
+                        $orderstatus_id = '1';
+                        if (config('settings.smsRestaurantNotify') == 'true') {
+                            Log::channel('orderlog')->info('send SMS to restaurant');
+                            $restaurant_id = $order->restaurant_id;
+                            //$this->smsToRestaurant($restaurant_id, $order->total);
+                        }
+                        //$this->sendPushNotificationStoreOwner($order->restaurant_id);
+                    }
+                    $order->orderstatus_id = $orderstatus_id;
+                    $order->payment_mode = $request->payment_method;
+
+                    if ($order->partial_wallet == 1) {
+                        $user = User::where('id', $order->user_id)->first();
+                        $userWalletBalance = $user->balanceFloat;
+
+                        Log::channel('orderlog')->info('Wallet Balance before Order: ' .$userWalletBalance);
+                        //deduct all user amount and add
+                        $user->withdraw($userWalletBalance * 100, ['description' => $translationData->orderPartialPaymentWalletComment . $order->unique_order_id]);
+                        Log::channel('orderlog')->info('Wallet Balance after Order: ' .$user->balanceFloat);
+                    }
+
+                    $order->save();
+                    $response = [
+                        'success' => true,
+                        'message' => 'Playment successfull',
+                        'data' => $order,
+                    ];
+                    return response()->json($response);
+                }else if($request->transactionStatus == 'PENDING'){
+                    Log::channel('orderlog')->info('transactionStatus: PENDING');
+                    throw new ValidationException(ErrorCode::UPI_PAYMENT_VERIFICATION_FAILED, 'payment not accepted');
+                }else{
+                    Log::channel('orderlog')->info('transactionStatus: FAIL');
+                    throw new ValidationException(ErrorCode::UPI_PAYMENT_VERIFICATION_FAILED, 'Payment not accepted, payment failed');
+                }
+
+            }catch (\Throwable $th) {
+                Log::channel('orderlog')->info('Exception occured during payment......');
+                Log::channel('orderlog')->info('ERROR: ' .$th->getMessage());
+                throw new ValidationException(ErrorCode::UPI_PAYMENT_VERIFICATION_FAILED, $th->getMessage());
+            }
+        }
+    }
+
 
     /**
      * @param Request $request
      */
-    public function processRazorpay(Request $request, TranslationHelper $translationHelper)
+    private function verifyRazorpayPayment(Request $request, TranslationHelper $translationHelper)
     {              
-        Log::channel('orderlog')->info('Inside processRazorpay...........');
+        Log::channel('orderlog')->info('Inside verifyRazorpayPayment...........');
         Log::channel('orderlog')->info('REQUEST: ' .json_encode($request->all()));
         $api_key = config('settings.razorpayKeyId');
         $api_secret = config('settings.razorpayKeySecret');
@@ -79,13 +157,18 @@ class PaymentController extends Controller
         $translationData = $translationHelper->getDefaultLanguageValuesForKeys($keys);
         
 
-        $order = Order::where('rzp_order_id', $request->order_id)->where('orderstatus_id', '8')->where('payment_mode', 'RAZORPAY')->first();
+        $order = Order::where('id', $request->order_id)
+            ->where('orderstatus_id', '8')
+            //->where('payment_mode', 'RAZORPAY')
+            ->first();
+        //return response()->json($order);
         Log::channel('orderlog')->info('ORDER: '.$order);
         if($order){
             $api = new Api($api_key, $api_secret);
             try {
                 //$response = Curl::to('https://api.razorpay.com/v1/orders/order_GYzdkmKNYJdwIZ/payments')
-                $response = Curl::to('https://api.razorpay.com/v1/orders/'.$request->order_id)
+                //$order->rzp_order_id
+                $response = Curl::to('https://api.razorpay.com/v1/orders/'.$request->razorPayOrderId)
                 ->withOption('USERPWD', "$api_key:$api_secret")
                 ->get();
 
@@ -93,12 +176,19 @@ class PaymentController extends Controller
                 $response = json_decode($response, true);//amount,amount_paid,amount_due
                 // return $order->payable;
                 //return $response['amount_due'] /100;
+
+                //return response()->json($response);
+                if(isset($response['error'])){
+                    Log::channel('orderlog')->info('ORDER: '.$order);
+                    throw new ValidationException(ErrorCode::BAD_REQUEST, "BAD_REQUEST_ERROR: Razorpay order status");
+                }
                 if($response['amount_due'] == 0){
                     $restaurant = Restaurant::where('id', $order->restaurant_id)->first();
 
                     if ($restaurant->auto_acceptable) {
                         Log::channel('orderlog')->info('restaurant is auto accepble, so set orderstatus_id = 2');
                         $orderstatus_id = '2';
+                        //$this->smsToDelivery($restaurant->id);
                         if (config('settings.enablePushNotificationOrders') == 'true') {
                             Log::channel('orderlog')->info('send push notification to user');
                             //to user
@@ -116,6 +206,7 @@ class PaymentController extends Controller
                         //$this->sendPushNotificationStoreOwner($order->restaurant_id);
                     }
                     $order->orderstatus_id = $orderstatus_id;
+                    $order->payment_mode = 'RAZORPAY';
 
                     if ($order->partial_wallet == 1) {
                         $user = User::where('id', $order->user_id)->first();
@@ -152,9 +243,6 @@ class PaymentController extends Controller
         throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "Order not found for rzp_order_id: ".$request->order_id); 
  
     }
-
-
-
 
 
     /**
@@ -621,8 +709,10 @@ class PaymentController extends Controller
      */
     public function payWithPaytm($order_id, Request $request)
     {
-        $order = Order::where('id', $order_id)->where('orderstatus_id', '8')->where('payment_mode', 'PAYTM')->first();       
-        //return response()->json($order); 
+        $order = Order::where('id', $order_id)
+            ->where('orderstatus_id', '8')
+            ->where('payment_mode', 'PAYTM')->first();
+//        return response()->json($order);
 
         if ($order) {
             $payment = PaytmWallet::with('receive');
@@ -639,7 +729,7 @@ class PaymentController extends Controller
                 'amount' => $orderTotal, // amount will be paid in INR.
                 //'callback_url' => 'https://' . $request->getHttpHost() . '/public/api/payment/process-paytm',
                 //'callback_url' => 'https://' . $request->getHttpHost() . '/PureEats/v2.4.1/public/api/payment/process-paytm',
-                'callback_url' => 'https://127.0.0.1/PureEats/v2.4.1/public/api/payment/process-paytm',
+                'callback_url' => 'https://localhost/PureEats/v2.4.1/public/api/payment/process-paytm',
             ]);
 
             return $payment->receive();
@@ -742,4 +832,62 @@ class PaymentController extends Controller
             }
         }
     }
+
+
+    private function generatePaytmChecksum($orderId){
+        $payTmMerchentId = env('PAYTM_MERCHANT_ID', 'DEFAULT_VALUE');
+        $payTmMerchentKey = env('PAYTM_MERCHANT_KEY', 'DEFAULT_VALUE');
+
+        $requstBody = [
+            "mid" =>  $payTmMerchentId,
+            "orderId" => $orderId,
+        ];
+
+        $body = json_encode($requstBody);
+        $paytmChecksum = PaytmChecksumHelper::generateSignature($body, $payTmMerchentKey);
+
+        /**
+         * Verify checksum
+         * Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytm.com/next/apikeys
+         */
+        // $isVerifySignature = PaytmChecksumHelper::verifySignature($body, $payTmMerchentKey, $paytmChecksum);
+        // if($isVerifySignature) {
+        //     echo "Checksum Matched";
+        // } else {
+        //     echo "Checksum Mismatched";
+        // }
+
+        return $paytmChecksum;
+    }
+
+
+
+
+    public function verifyPayment(Request $request)
+    {
+        //$checksum = $this->generatePaytmChecksum($request->order_id);
+        Log::channel('orderlog')->info('Inside verifyPayment...........');
+        if($request->order_id){
+            if($request->payment_method == "RAZORPAY"){
+                // validate RazorPay Payment request
+                if($request->razorpayPaymentID == null)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "invalid razorpayPaymentID");
+                if($request->razorPayOrderId == null)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "invalid razorPayOrderId");
+                return $this->verifyRazorpayPayment($request, new TranslationHelper());
+            }else if($request->payment_method == "GOOGLE_PAY" || $request->payment_method == "PHONEPAY" || $request->payment_method == "PAYTM" || $request->payment_method == "UPI"){
+                if($request->transactionId == null)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "invalid transactionId");
+                if($request->transactionRefId == null)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "invalid transactionRefId");
+                if($request->transactionStatus == null)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "invalid transactionStatus");
+                return $this->verifyUpiPayment($request, new TranslationHelper());
+            }else{
+                throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "payment_method not support");
+            }
+        }else{
+            throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "Payment Failed");
+        }
+    }
+
+
+
+
+
 };

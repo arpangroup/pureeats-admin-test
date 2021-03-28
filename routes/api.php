@@ -157,14 +157,7 @@ Route::get('/stripe-redirect-capture', [
     'uses' => 'PaymentController@stripeRedirectCapture',
 ])->name('stripeRedirectCapture');
 
-/* Paytm */
-Route::get('/payment/paytm/{order_id}', [
-    'uses' => 'PaymentController@payWithPaytm',
-]);
-Route::post('/payment/process-paytm', [
-    'uses' => 'PaymentController@processPaytm',
-]);
-/* END Paytm */
+
 
 /* Protected Routes for Loggedin users */
 Route::group(['middleware' => ['jwt.auth']], function () {
@@ -288,9 +281,9 @@ Route::post('/get-coupons', [
     'uses' => 'CouponController@getAllCoupons',
 ]);
 
-Route::post('/payment/process-razor-pay', [
-    'uses' => 'PaymentController@processRazorpay',
-]);
+//Route::post('/payment/process-razor-pay', [
+//    'uses' => 'PaymentController@processRazorpay',
+//]);
 
 Route::get('/payment/process-mercado-pago/{id}', [
     'uses' => 'PaymentController@processMercadoPago',

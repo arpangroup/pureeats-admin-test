@@ -162,7 +162,7 @@ class OrderController extends Controller
             $newOrder->address = $request->full_address;
             //$newOrder->transaction_id = $request->payment_token; //NEW           
             $newOrder->order_comment = $request->order_comment;
-            $newOrder->payment_mode = $request->payment_mode;
+            $newOrder->payment_mode = $request->payment_method;
             $newOrder->delivery_type = 2;
             if ($request->delivery_type == 1) $newOrder->delivery_type = 1;
             $user->delivery_pin = strtoupper(str_random(5));
@@ -170,21 +170,27 @@ class OrderController extends Controller
             $restaurant = Restaurant::where('id', $request->restaurant_id)->first(); 
             $newOrder->restaurant_id = $restaurant->id; 
            
-            if($request->pending_payment == true) {
-                Log::channel('orderlog')->info('###### Inside Pending Payment');
-                $newOrder->orderstatus_id = '8'; // PENDING_PAYMENT
-            }elseif ($restaurant->auto_acceptable) {
-                Log::channel('orderlog')->info('###### Inside AutoAcceptable');
-                // $newOrder->orderstatus_id = '2';
-                // $this->smsToDelivery($restaurant_id);
-                // if (config('settings.enablePushNotificationOrders') == 'true') {
-                //     //to user
-                //     $notify = new PushNotify();
-                //     $notify->sendPushNotification('2', $newOrder->user_id, $newOrder->unique_order_id);
-                // }
-            } else {
+            if($request->payment_method == 'COD' || $request->payment_method == 'WALLET'){
                 $newOrder->orderstatus_id = '1';
+                if ($restaurant->auto_acceptable) {
+                    Log::channel('orderlog')->info('restaurant is auto accepble, so set orderstatus_id = 2');
+                    $newOrder->orderstatus_id = '2';
+                    //$this->smsToDelivery($restaurant->id);
+                    if (config('settings.enablePushNotificationOrders') == 'true') {
+                        Log::channel('orderlog')->info('send push notification to user');
+                        //to user
+                         $notify = new PushNotify();
+                         $notify->sendPushNotification('2', $newOrder->user_id, $newOrder->unique_order_id);
+                    }
+                    //$this->sendPushNotificationStoreOwner($order->restaurant_id);
+                }
+            }else if($request->payment_method == 'GOOGLE_PAY' || $request->payment_method == 'PHONEPAY' || $request->payment_method == 'PAYTM' || $request->payment_method == 'UPI'){
+                $newOrder->orderstatus_id = '8';
+            }else {
+                $newOrder->orderstatus_id = '8';
             }
+
+
 
 
             
@@ -385,10 +391,14 @@ class OrderController extends Controller
                 'data' => $newOrder,
             ];
 
+            /* ################################# START_PAYMENT ##################################################*/
+            Log::channel('orderlog')->info('Start payment processing...........');
             if($request->payment_method == 'PAYTM'){
                 Log::channel('orderlog')->info('Generating checksum for paytm...........');
                 $response['data']['paytm_checksum'] = $this->generatePaytmChecksum($newOrder->unique_order_id);
                 Log::channel('orderlog')->info('PAYTM_CHECKSUM: ' .$response['data']['paytm_checksum']);
+            }else if($request->payment_method == 'GOOGLE_PAY' || $request->payment_method == 'PHONEPAY' || $request->payment_method == 'UPI'){
+                Log::channel('orderlog')->info('Payment method:' .$request->payment_method);
             }else if($request->payment_method == 'RAZORPAY'){
                 $razorPayResponse = $this->generateRazorPayOrderId($newOrder->payable);
                 //return  $razorPayResponse;
@@ -400,6 +410,8 @@ class OrderController extends Controller
                     $response['message'] = "Razorpay error";
                     $response['data'] = $razorPayResponse['response']->error;
                 }
+            }else{
+                Log::channel('orderlog')->info('Payment method not match');
             }
 
 

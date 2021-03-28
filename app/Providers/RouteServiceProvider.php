@@ -75,6 +75,7 @@ class RouteServiceProvider extends ServiceProvider
            // ->group(base_path('routes/api.php'));
            ->group(function ($router) {
                require base_path('routes/api.php');
+               require base_path('routes/payment.php');
                require base_path('routes/modules/ratingmodule/api.php');
            });
     }
