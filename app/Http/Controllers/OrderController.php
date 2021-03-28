@@ -283,7 +283,7 @@ class OrderController extends Controller
                         Log::channel('orderlog')->info('Google distance matrix enabled, distance: '.(float) $request->delivery_distance);
                         Log::channel('orderlog')->info("****Note:  create custom function to calculate the distance from backend and store on DB, to avoid extra pricing");
                         /* Make custom function to calculate the distance and store on DB, to avoid extra pricing*/
-                        $distance = (float) $request->distance;
+                        $distance = (float) $request->delivery_distance;
                     } else {
                         Log::channel('orderlog')->info('Google distance matrix not enabled');
                         //$distance = $this->getDistance($request['user']['data']['default_address']['latitude'], $request['user']['data']['default_address']['longitude'], $restaurant->latitude, $restaurant->longitude);
