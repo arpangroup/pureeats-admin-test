@@ -128,6 +128,36 @@ class AddressController extends Controller
     /**
      * @param Request $request
      */
+    public function editAddress(Request $request)
+    {
+        $user = auth()->user();
+        if ($user) {
+            $address = Address::where('user_id', $user->id)
+                ->where('id', $request->address_id)
+                ->first();
+
+            $address->latitude = $request->latitude;
+            $address->longitude = $request->longitude;
+            $address->address = $request->address;
+            $address->house = $request->house;
+            $address->landmark = $request->landmark;
+            $address->tag = $request->tag;
+            $address->save();
+
+            $addresses = Address::where('user_id', $user->id)->orderBy('id', 'DESC')->get();
+            return response()->json($addresses);
+        }
+        return response()->json(['success' => false]);
+
+
+    }
+
+
+
+
+    /**
+     * @param Request $request
+     */
     public function deleteAddress(Request $request)
     {
         $user = auth()->user();

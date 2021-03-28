@@ -180,6 +180,9 @@ Route::group(['middleware' => ['jwt.auth']], function () {
     Route::post('/save-address', [
         'uses' => 'AddressController@saveAddress',
     ]);
+    Route::post('/edit-address', [
+        'uses' => 'AddressController@editAddress',
+    ]);
     Route::post('/delete-address', [
         'uses' => 'AddressController@deleteAddress',
     ]);
