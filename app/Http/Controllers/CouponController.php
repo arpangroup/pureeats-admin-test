@@ -209,8 +209,13 @@ class CouponController extends Controller
      */
     public function getAllCoupons(Request $request)
     {
+        $coupons = [];
         if($request->restaurant_id){
-            $coupons = Restaurant::where('id', $request->restaurant_id)->first()->coupons;
+            //$coupons = Restaurant::where('id', $request->restaurant_id)->first()->coupons;
+            $restaurant = Restaurant::where('id', $request->restaurant_id)->first();
+            if($restaurant){
+                $coupons =  $restaurant->coupons;
+            }
         }else{
             $coupons = Coupon::orderBy('id', 'DESC')->with('restaurants')->get();
         }
