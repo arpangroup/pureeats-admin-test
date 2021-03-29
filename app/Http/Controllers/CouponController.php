@@ -67,7 +67,11 @@ class CouponController extends Controller
                             }
                         }
                         if ($coupon->user_type == 'CUSTOM') {
-                            $orderAlreadyPlacedWithCoupon = Order::where('user_id', $user->id)->where('coupon_name', $coupon->code)->get()->count();
+                            $orderAlreadyPlacedWithCoupon = Order::where('user_id', $user->id)
+                                ->where('coupon_name', $coupon->code)
+                                ->where('orderstatus_id', '!=', '6')
+                                ->get()
+                                ->count();
                             if ($orderAlreadyPlacedWithCoupon >= $coupon->max_count_per_user) {
                                 throw new ValidationException(ErrorCode::INVALID_COUPON, "Max limit reached for this coupon");                                
                             }
