@@ -247,11 +247,11 @@ class OrderController extends Controller
             //Coupon:
             Log::channel('orderlog')->info('###### Calculate CouponAmount........');
             if ($request->coupon) {
-                Log::channel('orderlog')->info('Coupon Applied: ' .$request['coupon']['code']);
+                Log::channel('orderlog')->info('Coupon Applied: ' .$request['coupon']);
                 $coupon = Coupon::where('code', strtoupper($request['coupon']['code']))->first();
                 if ($coupon) {
-                    Log::channel('orderlog')->info($request['coupon']['code'] .' is a valid coupon');
-                    $newOrder->coupon_name = $request['coupon']['code'];
+                    Log::channel('orderlog')->info($request['coupon'] .' is a valid coupon');
+                    $newOrder->coupon_name = $request['coupon'];
                     if ($coupon->discount_type == 'PERCENTAGE') {
                         Log::channel('orderlog')->info('DISCOUNT_TYPE: PERCENTAGE' );
                         $percentage_discount = (($coupon->discount / 100) * $orderTotal);

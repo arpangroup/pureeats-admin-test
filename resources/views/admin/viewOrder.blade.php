@@ -104,6 +104,14 @@
                                         <div class="py-1 text-warning" style="font-weight: 500;">
                                             {{ $order->payment_mode }}
                                         </div>
+                                        @if($order->partial_wallet == 1)
+                                            <div class="py-1 text-warning" style="font-weight: 500;">
+                                                +
+                                            </div>
+                                            <div class="py-1 text-warning" style="font-weight: 500;">
+                                                WALLET(PARTIAL)
+                                            </div>
+                                        @endif
                                     </div>
                                     </div>
                                 </div>
