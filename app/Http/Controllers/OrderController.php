@@ -248,7 +248,7 @@ class OrderController extends Controller
             Log::channel('orderlog')->info('###### Calculate CouponAmount........');
             if ($request->coupon) {
                 Log::channel('orderlog')->info('Coupon Applied: ' .$request['coupon']);
-                $coupon = Coupon::where('code', strtoupper($request['coupon']['code']))->first();
+                $coupon = Coupon::where('code', strtoupper($request['coupon']))->first();
                 if ($coupon) {
                     Log::channel('orderlog')->info($request['coupon'] .' is a valid coupon');
                     $newOrder->coupon_name = $request['coupon'];
