@@ -46,7 +46,7 @@
                         <div class="row">
                         <div class="col-md-6 col-sm-12">
                             <div class="form-group">
-                                <label class="control-label no-margin text-semibold mr-1"><strong><h5><u>Customer Details</u></h5></strong></label>
+                                <label class="control-label no-margin text-semibold mr-1"><strong><h5><u> <a href="{{route('admin.get.editUser', $order->user->id)}}"target="_blank" class="linked-item">Customer Details</a></u></h5></strong></label>
                                 <br>
                                 <p><b>Name: </b> {{ $order->user->name }}</p>
                                 <p><b>Email: </b> {{ $order->user->email }}</p>
@@ -103,15 +103,11 @@
                                         <hr style="width: 100%;" class="m-0">
                                         <div class="py-1 text-warning" style="font-weight: 500;">
                                             {{ $order->payment_mode }}
+                                            @if($order->partial_wallet == 1)
+                                                + WALLET
+                                            @endif
                                         </div>
-                                        @if($order->partial_wallet == 1)
-                                            <div class="py-1 text-warning" style="font-weight: 500;">
-                                                +
-                                            </div>
-                                            <div class="py-1 text-warning" style="font-weight: 500;">
-                                                WALLET(PARTIAL)
-                                            </div>
-                                        @endif
+
                                     </div>
                                     </div>
                                 </div>

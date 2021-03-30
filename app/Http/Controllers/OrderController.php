@@ -90,44 +90,41 @@ class OrderController extends Controller
 
     private function validateOrderRequest(Request $request, $user){
         // validate User
-        try{
-            if($user){
-                $paymentMethods = array('COD', 'WALLET', 'RAZORPAY', 'PAYTM');
-    
-                // User:
-                if($user->is_active != 1)throw new ValidationException(ErrorCode::ACCOUNT_BLOCKED, "User is blocked temporarily");  
-                
-                // Order:
-                if(!is_numeric($request->restaurant_id))throw new ValidationException(ErrorCode::BAD_REQUEST, "Incorrect datatype for restaurant_id");  
-                            
-                // Location:
-                if($request->location == null)throw new ValidationException(ErrorCode::BAD_REQUEST, "locationshould not be null");  
-                if($request->full_address == null)throw new ValidationException(ErrorCode::BAD_REQUEST, "full_address should not be null");
-                if($request->delivery_type == null)throw new ValidationException(ErrorCode::BAD_REQUEST, "delivery_type should not be null");
-                if($request->delivery_type == 1 || $request->delivery_type == 3){
-                    if($request->distance == null || !is_numeric($request->distance))throw new ValidationException(ErrorCode::BAD_REQUEST, "Invalid distance");
-                }
-    
-                // Payment:
-                if($request->payment_method == null)throw new ValidationException(ErrorCode::BAD_REQUEST, "payment_method should not be null");
-                if(!in_array($request->payment_method, $paymentMethods))throw new ValidationException(ErrorCode::BAD_REQUEST, "Invalid payment_method");
-                //if($request->pending_payment == null)throw new ValidationException(ErrorCode::BAD_REQUEST, "pending_payment should not be null");
-                if(!is_bool($request->pending_payment))throw new ValidationException(ErrorCode::BAD_REQUEST, "pending_payment should be true or false");
-                if(($request->payment_method == 'COD' ||$request->payment_method == 'WALLET') && $request->pending_payment == true)throw new ValidationException(ErrorCode::BAD_REQUEST, 'For '.$request->payment_method .' pending_payment should be always false');
-                if(($request->payment_method == 'RAZORPAY' ||$request->payment_method == 'PAYTM') && $request->pending_payment == false)throw new ValidationException(ErrorCode::BAD_REQUEST, "For ".$request->payment_method .' pending_payment should be always true');
-                if($request->partial_wallet){
-                    if(!is_bool($request->partial_wallet))throw new ValidationException(ErrorCode::BAD_REQUEST, "partial_wallet should be true or false");
-                    if($request->partial_wallet == true){
-                        if($request->partial_wallet_amount == null || !is_numeric($request->partial_wallet_amount))throw new ValidationException(ErrorCode::BAD_REQUEST, "Invalid data type partial_wallet_amount");
-                        if($user->balanceFloat < $request->partial_wallet_amount)throw new ValidationException(ErrorCode::BAD_REQUEST, "Invalid wallet anount, available wallet balance is ".$user->balanceFloat);
-                    }
-                }   
-            }else{
-                throw new ValidationException(ErrorCode::INVALID_AUTH_TOKEN, "Authentication Fail");
+        if($user){
+            $paymentMethods = array('COD', 'WALLET', 'RAZORPAY', 'PAYTM', 'GOOGLE_PAY', 'PHONEPAY', 'UPI');
+
+            // User:
+            if($user->is_active != 1)throw new ValidationException(ErrorCode::ACCOUNT_BLOCKED, "User is blocked temporarily");
+
+            // Order:
+            if(!is_numeric($request->restaurant_id))throw new ValidationException(ErrorCode::BAD_REQUEST, "Incorrect datatype for restaurant_id");
+
+            // Location:
+            if($request->location == null)throw new ValidationException(ErrorCode::BAD_REQUEST, "locationshould not be null");
+            if($request->full_address == null)throw new ValidationException(ErrorCode::BAD_REQUEST, "full_address should not be null");
+            if($request->delivery_type == null)throw new ValidationException(ErrorCode::BAD_REQUEST, "delivery_type should not be null");
+            if($request->delivery_type == 1 || $request->delivery_type == 3){
+                if($request->delivery_distance == null || !is_numeric($request->delivery_distance))throw new ValidationException(ErrorCode::BAD_REQUEST, "Invalid delivery_distance");
             }
-    
-        }catch(\Throwable $th){
-            Log::channel('orderlog')->info('ERROR: ' .$th->getMessage());
+
+            // Payment:
+            if($request->payment_mode == null)throw new ValidationException(ErrorCode::BAD_REQUEST, "payment_mode should not be null");
+            if(!in_array($request->payment_mode, $paymentMethods))throw new ValidationException(ErrorCode::BAD_REQUEST, "Invalid payment_mode");
+            //if($request->pending_payment == null)throw new ValidationException(ErrorCode::BAD_REQUEST, "pending_payment should not be null");
+            //if(!is_bool($request->pending_payment))throw new ValidationException(ErrorCode::BAD_REQUEST, "pending_payment should be true or false");
+            //if(($request->payment_mode == 'COD' ||$request->payment_mode == 'WALLET') && $request->pending_payment == true)throw new ValidationException(ErrorCode::BAD_REQUEST, 'For '.$request->payment_method .' pending_payment should be always false');
+            //if(($request->payment_mode == 'RAZORPAY' ||$request->payment_mode == 'PAYTM') && $request->payment_mode == false)throw new ValidationException(ErrorCode::BAD_REQUEST, "For ".$request->payment_method .' pending_payment should be always true');
+            if($request->partial_wallet){
+                if(!is_bool($request->partial_wallet))throw new ValidationException(ErrorCode::BAD_REQUEST, "partial_wallet should be true or false");
+                if($request->partial_wallet == true){
+                    if($request->partial_wallet_amount == null || !is_numeric($request->partial_wallet_amount))throw new ValidationException(ErrorCode::BAD_REQUEST, "Invalid data type partial_wallet_amount");
+                    if($user->balanceFloat < $request->partial_wallet_amount)throw new ValidationException(ErrorCode::BAD_REQUEST, "Invalid wallet amount, available wallet balance is ".$user->balanceFloat);
+                }
+            }
+            // Check if user has enough wallet balance for full wallet payment
+            if($request->payment_mode == 'WALLET' && $user->balanceFloat < $request->total)throw new ValidationException(ErrorCode::BAD_REQUEST, "Invalid wallet amount, available wallet balance is ".$user->balanceFloat);
+        }else{
+            throw new ValidationException(ErrorCode::INVALID_AUTH_TOKEN, "Authentication Fail");
         }
         
     }
@@ -345,13 +342,23 @@ class OrderController extends Controller
             Log::channel('orderlog')->info('TOTAL: ' .$newOrder->total);
             //return response()->json(['subtotal' => $orderTotal,'order' => $newOrder,]);
 
+            if($request->payment_mode == 'WALLET' && $user->balanceFloat < $orderTotal){
+                Log::channel('orderlog')->info('payment_mode = WALLET, and users wallet balance is less then total, so returning with error message');
+                return response()->json(['success' => false, 'message' => "Invalid wallet amount, available wallet balance is ".$user->balanceFloat, ]);
+            }
+
             if ($request->partial_wallet == true) {
                 Log::channel('orderlog')->info('partial_wallet = true, so deduct all user amount');
+                if($user->balanceFloat < $request->partial_wallet_amount){
+                    Log::channel('orderlog')->info('User has no sufficient wallet balance to proceed....so return the error message');
+                    return response()->json(['success' => false, 'message' => "Invalid wallet amount, available wallet balance is ".$user->balanceFloat, ]);
+                }
+
                 //deduct all user amount and add
                 $userWalletBalance = $user->balanceFloat;
                 $newOrder->payable = $orderTotal - $userWalletBalance;            
                 $newOrder->partial_wallet = 1;    
-                $newOrder->partial_wallet_amount = $userWalletBalance;                
+                $newOrder->partial_wallet_amount = $request->partial_wallet_amount;
                 Log::channel('orderlog')->info('Total: '.$orderTotal  .' payable: '.$newOrder->payable);
             }
             if ($request->partial_wallet == false) {
@@ -359,6 +366,8 @@ class OrderController extends Controller
                 $newOrder->payable = $orderTotal;
                 Log::channel('orderlog')->info('Total: '.$orderTotal  .' payable: '.$newOrder->payable);
             }
+
+
 
             // Save the order
             Log::channel('orderlog')->info('Saving order........');
@@ -410,6 +419,15 @@ class OrderController extends Controller
                     $response['message'] = "Razorpay error";
                     $response['data'] = $razorPayResponse['response']->error;
                 }
+            }else if($request->payment_mode == 'WALLET'){
+                Log::channel('orderlog')->info('Current Users wallerBalance is: ' .$user->balanceFloat . ', Paying Full Wallet Payment of'.$orderTotal);
+                $user->withdraw($orderTotal * 100, ['description' => $translationData->orderPaymentWalletComment . $newOrder->unique_order_id]);
+                Log::channel('orderlog')->info('Current WalletBalance after full wallet payment : ' .$user->balanceFloat);
+            }else if($request->payment_mode == 'COD' && $request->partial_wallet == true){
+                Log::channel('orderlog')->info('COD Order with Partial Wallet...so deduct the partial amount of '.$request->partial_wallet_amount);
+                $userWalletBalance = $user->balanceFloat;
+                $user->withdraw($userWalletBalance * 100, ['description' => $translationData->orderPartialPaymentWalletComment . $newOrder->unique_order_id]);
+                Log::channel('orderlog')->info('Current WalletBalance after full wallet payment : ' .$user->balanceFloat);
             }else{
                 Log::channel('orderlog')->info('Payment method not match');
             }
