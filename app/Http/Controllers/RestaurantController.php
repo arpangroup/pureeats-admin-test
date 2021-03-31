@@ -546,7 +546,7 @@ class RestaurantController extends Controller
         $isAddressOperational = $this->checkOperation($request->latitude, $request->longitude, $restaurant);
         //$restaurant['is_operational'] = $isAddressOperational;
 
-        /*
+
         if($request->latitude && $request->longitude){
             if (config('settings.enDistanceMatrixDeliveryTime') == 'true' && ($restaurant->delivery_type == 1 || $restaurant->delivery_type == 3)) {
                 $distanceMatrixResponse = $this->getGoogleDistance($request->latitude, $request->longitude, $restaurant);
@@ -575,7 +575,7 @@ class RestaurantController extends Controller
                 }
             }
         }
-        */
+
 
         if ($restaurant) {
             $restaurant->makeHidden(['delivery_areas', 'location_id', 'schedule_data']);
