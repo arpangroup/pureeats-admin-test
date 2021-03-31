@@ -539,13 +539,49 @@ class RestaurantController extends Controller
     public function getRestaurantInfoAndOperationalStatus(Request $request)
     {
         $restaurant = Restaurant::where('id', $request->restaurant_id)->with('payment_gateways_active')->first();
-        //if($request->payment_method == 'COD') throw new ValidationException(ErrorCode::UNSUPPORTED_PAYMENT_METHOD, "Cash on delivery is not valid for orders above ₹350. Please pay online to proceed");
+        if($restaurant == null) throw new ValidationException(ErrorCode::BAD_REQUEST, "Invalid restaurant_id");
+
+        /*###################################################*/
+        /* Step1: Check Address is operational or not  */
+        $isAddressOperational = $this->checkOperation($request->latitude, $request->longitude, $restaurant);
+        //$restaurant['is_operational'] = $isAddressOperational;
+
+        /*
+        if($request->latitude && $request->longitude){
+            if (config('settings.enDistanceMatrixDeliveryTime') == 'true' && ($restaurant->delivery_type == 1 || $restaurant->delivery_type == 3)) {
+                $distanceMatrixResponse = $this->getGoogleDistance($request->latitude, $request->longitude, $restaurant);
+                $distance = ($distanceMatrixResponse['distance']['value']) /1000;
+
+                $deliveryTimeInSecond = $distanceMatrixResponse['duration']['value'];
+                $deliveryTimeInMin = ($deliveryTimeInSecond /60) + ((int)$restaurant->delivery_time);
+                $restaurant['delivery_time'] = ceil($deliveryTimeInMin);
+                // Check is_operational or not:
+                if ($distance <= $restaurant->delivery_radius){
+                    $restaurant['is_operational'] = true;
+                }else{
+                    $restaurant['is_operational'] = false;
+                }
+            }else{
+                // Calculate the delivery time based on geographical distance
+                $distance = $this->getDistance($request->latitude, $request->longitude, $restaurant->latitude, $restaurant->longitude);
+                $actualDeliveryTime = $distance * ((int)config('settings.approxDeliveryTimePerKm')) ;
+                $restaurantDeliveryTime = $actualDeliveryTime + ((int)$restaurant->delivery_time);
+                $restaurant['delivery_time'] = ceil($restaurantDeliveryTime);
+                // Check is_operational or not:
+                if ($distance <= $restaurant->delivery_radius){
+                    $restaurant['is_operational'] = true;
+                }else{
+                    $restaurant['is_operational'] = false;
+                }
+            }
+        }
+        */
 
         if ($restaurant) {
             $restaurant->makeHidden(['delivery_areas', 'location_id', 'schedule_data']);
             return response()->json([
                 'success' => true,
-                'message' => 'operational',
+                'message' => $isAddressOperational == true ? 'operational' : 'not operational',
                 'data' => $restaurant,
                 'code' => '',
             ]);
