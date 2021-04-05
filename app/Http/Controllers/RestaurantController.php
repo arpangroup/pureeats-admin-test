@@ -580,8 +580,8 @@ class RestaurantController extends Controller
         if ($restaurant) {
             $restaurant->makeHidden(['delivery_areas', 'location_id', 'schedule_data']);
             return response()->json([
-                'success' => true,
-                'message' => $isAddressOperational == true ? 'operational' : 'not operational',
+                'success' => false,
+                'message' => $isAddressOperational == true ? 'operational' : 'not operational for weather condition',
                 'data' => $restaurant,
                 'code' => '',
             ]);
