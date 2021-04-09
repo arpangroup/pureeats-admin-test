@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Item;
 use App\Restaurant;
+use App\StoreWarning;
 use App\User;
 use Cache;
 use DB;
@@ -538,56 +539,69 @@ class RestaurantController extends Controller
      */
     public function getRestaurantInfoAndOperationalStatus(Request $request)
     {
-        $restaurant = Restaurant::where('id', $request->restaurant_id)->with('payment_gateways_active')->first();
+        $restaurant = Restaurant::where('id', $request->restaurant_id)->first();
         if($restaurant == null) throw new ValidationException(ErrorCode::BAD_REQUEST, "Invalid restaurant_id");
+        $restaurant->makeHidden(['delivery_areas', 'location_id', 'schedule_data']);
+        $operationalStatus = array('is_operational' => true, 'message' => 'operational',);
 
-        /*###################################################*/
-        /* Step1: Check Address is operational or not  */
-        $isAddressOperational = $this->checkOperation($request->latitude, $request->longitude, $restaurant);
-        //$restaurant['is_operational'] = $isAddressOperational;
-
-
-        if($request->latitude && $request->longitude){
-            if (config('settings.enDistanceMatrixDeliveryTime') == 'true' && ($restaurant->delivery_type == 1 || $restaurant->delivery_type == 3)) {
-                $distanceMatrixResponse = $this->getGoogleDistance($request->latitude, $request->longitude, $restaurant);
-                $distance = ($distanceMatrixResponse['distance']['value']) /1000;
-
-                $deliveryTimeInSecond = $distanceMatrixResponse['duration']['value'];
-                $deliveryTimeInMin = ($deliveryTimeInSecond /60) + ((int)$restaurant->delivery_time);
-                $restaurant['delivery_time'] = ceil($deliveryTimeInMin);
-                // Check is_operational or not:
-                if ($distance <= $restaurant->delivery_radius){
-                    $restaurant['is_operational'] = true;
-                }else{
-                    $restaurant['is_operational'] = false;
-                }
-            }else{
-                // Calculate the delivery time based on geographical distance
-                $distance = $this->getDistance($request->latitude, $request->longitude, $restaurant->latitude, $restaurant->longitude);
-                $actualDeliveryTime = $distance * ((int)config('settings.approxDeliveryTimePerKm')) ;
-                $restaurantDeliveryTime = $actualDeliveryTime + ((int)$restaurant->delivery_time);
-                $restaurant['delivery_time'] = ceil($restaurantDeliveryTime);
-                // Check is_operational or not:
-                if ($distance <= $restaurant->delivery_radius){
-                    $restaurant['is_operational'] = true;
-                }else{
-                    $restaurant['is_operational'] = false;
-                }
+        /* Step1: First check if there exist any warning for the restaurant */
+        $urgentWarning = StoreWarning::where('alert_type', 'STORE_OPERATIONAL')->where('is_active', '1')->first();
+        if($urgentWarning){
+            $warnedStores = explode(",", $urgentWarning['target_stores']);
+            if(in_array($restaurant->id, $warnedStores)){
+                $operationalStatus['is_operational'] = false;
+                $operationalStatus['message'] = $urgentWarning->message;
             }
         }
 
 
-        if ($restaurant) {
-            $restaurant->makeHidden(['delivery_areas', 'location_id', 'schedule_data']);
-            return response()->json([
-                'success' => true,
-                'message' => $isAddressOperational == true ? 'operational' : 'not operational for weather condition',
-                'data' => $restaurant,
-                'code' => '',
-            ]);
-        } else {
-            throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, 'Restaurant ID not passed or not found.');
+
+        if($operationalStatus['is_operational'] == true){
+            /* Step2: Check Address is operational or not  */
+            $isAddressOperational = $this->checkOperation($request->latitude, $request->longitude, $restaurant);
+            //$restaurant['is_operational'] = $isAddressOperational;
+
+            if($request->latitude && $request->longitude){
+                if (config('settings.enDistanceMatrixDeliveryTime') == 'true' && ($restaurant->delivery_type == 1 || $restaurant->delivery_type == 3)) {
+                    $distanceMatrixResponse = $this->getGoogleDistance($request->latitude, $request->longitude, $restaurant);
+                    $distance = ($distanceMatrixResponse['distance']['value']) /1000;
+
+                    $deliveryTimeInSecond = $distanceMatrixResponse['duration']['value'];
+                    $deliveryTimeInMin = ($deliveryTimeInSecond /60) + ((int)$restaurant->delivery_time);
+                    $restaurant['delivery_time'] = ceil($deliveryTimeInMin);
+                    // Check is_operational or not:
+                    if ($distance <= $restaurant->delivery_radius){
+                        $operationalStatus['is_operational'] = true;
+                        $operationalStatus['message'] = "operational";
+
+                    }else{
+                        $operationalStatus['is_operational'] = false;
+                        $operationalStatus['message'] = "address is not operational";
+                    }
+                }else{
+                    // Calculate the delivery time based on geographical distance
+                    $distance = $this->getDistance($request->latitude, $request->longitude, $restaurant->latitude, $restaurant->longitude);
+                    $actualDeliveryTime = $distance * ((int)config('settings.approxDeliveryTimePerKm')) ;
+                    $restaurantDeliveryTime = $actualDeliveryTime + ((int)$restaurant->delivery_time);
+                    $restaurant['delivery_time'] = ceil($restaurantDeliveryTime);
+                    // Check is_operational or not:
+                    if ($distance <= $restaurant->delivery_radius){
+                        $operationalStatus['is_operational'] = true;
+                        $operationalStatus['message'] = "operational";
+                    }else{
+                        $operationalStatus['is_operational'] = false;
+                        $operationalStatus['message'] = "address is not operational";
+                    }
+                }
+            }
+
         }
+
+        $response = array(
+            'restaurant' => $restaurant,
+            'operational_status' => $operationalStatus,
+        );
+        return response()->json($response);
 
     }
 

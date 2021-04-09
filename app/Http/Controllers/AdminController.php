@@ -326,11 +326,17 @@ class AdminController extends Controller
         $user = User::where('id', $id)->with('orders')->first();
         $roles = Role::get();
 
+        $sessions = [];
+        if ($user->hasRole('Delivery Guy')) {
+            $sessions = DB::table('login_sessions')->where('user_id', $user->id)->orderBy('id', 'desc')->get();
+        }
+
         // dd($user->delivery_guy_detail);
         return view('admin.editUser', array(
             'orders' => $user->orders,
             'user' => $user,
             'roles' => $roles,
+            'sessions' => $sessions,
         ));
     }
 

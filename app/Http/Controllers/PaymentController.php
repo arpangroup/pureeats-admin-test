@@ -27,24 +27,82 @@ use PaytmChecksumHelper;
 
 class PaymentController extends Controller
 {
+    public function getAllPaymentGateways(){
+        $paymentGateways = PaymentGateway::where('is_active', 1)->get()->makeHidden(['created_at', 'updated_at']);
+
+        $gatewayList = [];
+        foreach ($paymentGateways as $gateway) {
+            if(config('settings.default_payment_gateway') != null){
+                $gateway['is_default'] = config('settings.default_payment_gateway')==$gateway->name ? 1 : 0;
+            }
+
+            switch ($gateway->name){
+                case 'COD':
+                    $maxCODOrderAmount = config('settings.cod_max_order_amount') ;
+                    if($maxCODOrderAmount != null){
+                        $gateway['max_order_amount'] = (float)$maxCODOrderAmount;
+                    }
+                    if(config('settings.cod_enable_for_self_pickup') != null){
+                        $gateway['allow_self_pickup'] = config('settings.cod_enable_for_self_pickup') == 'true'? 1 : 0;
+                    }
+                    break;
+                case 'GOOGLE_PAY':
+                    $gateway['upi_details'] = array(
+                        'merchant_id' => config('settings.googlepay_merchant_id'),
+                        'merchant_name' => config('settings.googlepay_merchant_name'),
+                        'merchant_code' => config('settings.googlepay_merchant_code'),
+                        'transaction_note' => config('settings.googlepay_transaction_note'),
+                        'package_name' => config('settings.googlepay_package_name'),
+                    );
+                    break;
+                case 'PHONEPAY':
+                    $gateway['upi_details'] = array(
+                        'merchant_id' => config('settings.phonepay_merchant_id'),
+                        'merchant_name' => config('settings.phonepay_merchant_name'),
+                        'merchant_code' => config('settings.phonepay_merchant_code'),
+                        'transaction_note' => config('settings.phonepay_transaction_note'),
+                        'package_name' => config('settings.phonepay_package_name'),
+                    );
+                    break;
+                case 'UPI':
+                    $gateway['upi_details'] = array(
+                        'merchant_id' => config('settings.upi_merchant_id'),
+                        'merchant_name' => config('settings.upi_merchant_name'),
+                        'merchant_code' => config('settings.upi_merchant_code'),
+                        'transaction_note' => config('settings.upi_transaction_note'),
+                    );
+                    break;
+            }
+
+            array_push($gatewayList, $gateway);
+
+        }
+        return $gatewayList;
+    }
+
     public function getPaymentGateways(Request $request)
     {
+        /*
+        // If restaurant has the access to select payment gateways
         if (config('settings.allowPaymentGatewaySelection') == 'true') {
             $restaurant = Restaurant::where('id', $request->restaurant_id)->first();
             if ($restaurant) {
                 if (count($restaurant->payment_gateways) > 0) {
                     $paymentGateways = $restaurant->payment_gateways_active;
                 } else {
-                    $paymentGateways = PaymentGateway::where('is_active', 1)->get();
+                    $paymentGateways = $this->getAllPaymentGateways();
                 }
                 return response()->json($paymentGateways);
             } else {
                 return 'Store Not Found';
             }
         } else {
-            $paymentGateways = PaymentGateway::where('is_active', 1)->get();
+            $paymentGateways = $this->getAllPaymentGateways();
             return response()->json($paymentGateways);
         }
+        */
+        $paymentGateways = $this->getAllPaymentGateways();
+        return response()->json($paymentGateways);
     }
 
     /**

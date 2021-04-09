@@ -1618,6 +1618,33 @@
                                     </div>
                                 </div>
                                 @endforeach
+
+                                <hr>
+                                <h2> <img src="{{url("/")}}/assets/img/various/cod.png" alt="COD" style="width: 35px"> COD</h2>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Maximum Order Amount:</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="number" class="form-control form-control-lg" name="cod_max_order_amount"
+                                               value="{{ config('settings.cod_max_order_amount') }}"
+                                               placeholder="Maximum Order Amount Limit for COD">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Enable For DelfPickup</strong></label>
+                                    <div class="col-lg-9">
+                                        <div class="checkbox checkbox-switchery mt-2">
+                                            <label>
+                                                <input value="true" type="checkbox" class="switchery-primary"
+                                                       @if(config('settings.cod_enable_for_self_pickup')=="true" )
+                                                       checked="checked"
+                                                       @endif name="cod_enable_for_self_pickup">
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+
                                 <hr>
                                 <h2> <img src="{{url("/")}}/assets/img/various/stripe.png" alt="Stripe" style="width: 35px"> Stripe</h2>
                                 <div class="form-group row">
@@ -1746,6 +1773,10 @@
                                     </div>
                                 </div>
                                 <hr>
+
+
+
+
                                 <h2> <img src="{{url("/")}}/assets/img/various/paystack.png" alt="PayStack" style="width: 35px"> PayStack</h2>
                                 <div class="form-group row">
                                     <label class="col-lg-3 col-form-label"><strong>PayStack Public Key:</strong></label>
@@ -1784,6 +1815,8 @@
                                     </div>
                                 </div>
                                 <hr>
+
+
                                 <h2> <img src="{{url("/")}}/assets/img/various/paymongo.png" alt="PayMongo" style="width: 35px"> PayMongo</h2>
                                 <div class="form-group row">
                                     <label class="col-lg-3 col-form-label"><strong>PayMongo Public Key:</strong></label>
@@ -1802,6 +1835,8 @@
                                     </div>
                                 </div>
                                 <hr>
+
+
                                 
                                 <h2> <img src="{{url("/")}}/assets/img/various/mercadopago.png" alt="MercadoPago" style="width: 35px"> MercadoPago</h2>
                                 <div class="form-group row">
@@ -1813,7 +1848,6 @@
                                             <span class="text-muted">Get Access token from here: <a href="https://www.mercadopago.com.br/developers/panel/credentials" target="_blank">https://www.mercadopago.com.br/developers/panel/credentials</a></span>
                                     </div>
                                 </div>
-
                                 <hr>
 
                                 <h2> <img src="{{url("/")}}/assets/img/various/paytm.png" alt="Paytm" style="width: 35px"> Paytm</h2>
@@ -1866,10 +1900,9 @@
                                             placeholder="Paytm Channel ID (For Website)">
                                     </div>
                                 </div>
-
                                 <hr>
 
-                                <h2> <img src="{{url("/")}}/assets/img/various/upi.png" alt="Paytm" style="width: 48px"> UPI</h2>
+                                <h2> <img src="{{url("/")}}/assets/img/various/upi.png" alt="UPI" style="width: 48px"> UPI</h2>
                                 <div class="form-group row">
                                     <label class="col-lg-3 col-form-label"><strong>Merchant UPI ID(pa):</strong></label>
                                     <div class="col-lg-9">
@@ -1904,7 +1937,131 @@
                                 </div>
 
 
+
+                                <h2> <img src="{{url("/")}}/assets/img/various/googlepay.png" alt="GooglePay" style="width: 48px"> GooglePay</h2>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Merchant UPI ID(pa):</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="googlepay_merchant_id"
+                                               value="{{ config('settings.googlepay_merchant_id') }}"
+                                               placeholder="Ex:googlepay@okaxis">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Merchant Name(pn):</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="googlepay_merchant_name"
+                                               value="{{ config('settings.googlepay_merchant_name') }}"
+                                               placeholder="Ex: Pure Eats">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Merchant Code(mc):</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="googlepay_merchant_code"
+                                               value="{{ config('settings.googlepay_merchant_code') }}"
+                                               placeholder="Leave blank if you dont know">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Transaction Note(tn):</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="googlepay_transaction_note"
+                                               value="{{ config('settings.googlepay_transaction_note') }}"
+                                               placeholder="Ex: Payment for PureEats">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Package Name:</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="googlepay_package_name"
+                                               value="{{ config('settings.googlepay_package_name') }}"
+                                               placeholder="Ex: com.googlepay">
+                                    </div>
+                                </div>
+
+
+
+                                <h2> <img src="{{url("/")}}/assets/img/various/phonepe.png" alt="PhonePay" style="width: 48px"> PhonePay</h2>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Merchant UPI ID(pa):</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="phonepay_merchant_id"
+                                               value="{{ config('settings.phonepay_merchant_id') }}"
+                                               placeholder="Ex:pureeats@phonepay">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Merchant Name(pn):</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="phonepay_merchant_name"
+                                               value="{{ config('settings.phonepay_merchant_name') }}"
+                                               placeholder="Ex: Pure Eats">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Merchant Code(mc):</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="phonepay_merchant_code"
+                                               value="{{ config('settings.phonepay_merchant_code') }}"
+                                               placeholder="Leave blank if you dont know">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Transaction Note(tn):</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="phonepay_transaction_note"
+                                               value="{{ config('settings.phonepay_transaction_note') }}"
+                                               placeholder="Ex: Payment for PureEats">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Package Name:</strong></label>
+                                    <div class="col-lg-9">
+                                        <input type="text" class="form-control form-control-lg" name="phonepay_package_name"
+                                               value="{{ config('settings.phonepay_package_name') }}"
+                                               placeholder="Ex: Payment for PureEats">
+                                    </div>
+                                </div>
+
+
+
+
+                                <h2> <img src="{{url("/")}}/assets/img/various/default_payment.png" alt="PhonePay" style="width: 48px"> Default Payment Gateway</h2>
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label"><strong>Default Payment Gateway:</strong></label>
+                                    <div class="col-lg-9">
+                                        <select name="default_payment_gateway" class="form-control form-control-lg select">
+                                            @php
+                                                $activePaymentGatewayCount = count($activePaymentGateways);
+                                            @endphp
+                                            @foreach($paymentGateways as $paymentGateway)
+                                                @if($paymentGateway->is_active)
+                                                <option
+                                                        value="{{ $paymentGateway->name }}"
+                                                        @if(config('settings.default_payment_gateway') ==  $paymentGateway->name)
+                                                        selected
+                                                        @endif
+
+                                                > {{ $paymentGateway->name }} </option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                        <span class="help-text text-muted mt-2"> Default Payment gateway will be automatically selected in <strong>Customer App </strong></span>
+                                    </div>
+                                </div>
+
                             </div>
+
+
+
+
+
+
+
+
+
+
                             <div class="tab-pane fade" id="smsGatewaySettings">
                                 <legend class="font-weight-semibold text-uppercase font-size-sm">
                                     SMS Settings
