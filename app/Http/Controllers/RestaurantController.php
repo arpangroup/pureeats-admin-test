@@ -551,6 +551,7 @@ class RestaurantController extends Controller
             if(in_array($restaurant->id, $warnedStores)){
                 $operationalStatus['is_operational'] = false;
                 $operationalStatus['message'] = $urgentWarning->message;
+                $operationalStatus['error_code'] = ErrorCode::RESTAURANT_NOT_OPERATIONAL;
             }
         }
 
@@ -577,6 +578,7 @@ class RestaurantController extends Controller
                     }else{
                         $operationalStatus['is_operational'] = false;
                         $operationalStatus['message'] = "address is not operational";
+                        $operationalStatus['error_code'] = ErrorCode::ADDRESS_NOT_OPERATIONAL;
                     }
                 }else{
                     // Calculate the delivery time based on geographical distance
@@ -591,6 +593,7 @@ class RestaurantController extends Controller
                     }else{
                         $operationalStatus['is_operational'] = false;
                         $operationalStatus['message'] = "address is not operational";
+                        $operationalStatus['error_code'] = ErrorCode::ADDRESS_NOT_OPERATIONAL;
                     }
                 }
             }
