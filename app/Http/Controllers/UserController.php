@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 use App\AcceptDelivery;
 use App\Address;
 use App\User;
+use App\LoginSession;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -388,7 +390,7 @@ class UserController extends Controller
                         $user->password = \Hash::make($request->otp);
                         $user->save();
 
-                        Log::info('OSaving push token......');
+                        Log::info('Saving push token......');
                         if($request->push_token){
                             $this->saveToken($user->id, $request->push_token);
                         }
@@ -397,6 +399,30 @@ class UserController extends Controller
                         if ($user->default_address_id !== 0) {
                              $default_address = \App\Address::where('id', $user->default_address_id)->get()->first();
                          }
+
+
+                        try{
+                            $meta = $request->meta;
+                            if($meta != null){
+                                $loginSession =  LoginSession::where('user_id', $user->id)->get()->first();
+                                if(!$loginSession){
+                                    $loginSession = new LoginSession();
+                                    $loginSession->user_id = $user->id;
+                                }
+                                $loginSession->login_at = Carbon::now();
+                                $loginSession->mac_address = $meta['MAC'];
+                                $loginSession->ip_address = $meta['wifiIP'];
+                                $loginSession->manufacturer = $meta['manufacturer'];
+                                $loginSession->model = $meta['model'];
+                                $loginSession->sdk = $meta['sdk'];
+                                $loginSession->brand = $meta['brand'];
+                                $loginSession->save();
+
+                            }
+                        }catch (\Throwable $th) {
+                            Log::error('ERROR inside login() during meta record insertion');
+                            Log::error('ERROR: ' .$th->getMessage());
+                        }
 
                         Log::info('Fetch Running Orders.....');
                         //$running_order = null;
@@ -532,6 +558,28 @@ class UserController extends Controller
                     $user->default_address_id = $address->id;
                 }
 
+                try{
+                    $meta = $request->meta;
+                    if($meta != null)$user->meta = $meta;
+                    $loginSession =  LoginSession::where('user_id', $user->id)->get()->first();
+                    if(!$loginSession){
+                        $loginSession = new LoginSession();
+                        $loginSession->user_id = $user->id;
+                    }
+                    $loginSession->login_at = Carbon::now();
+                    $loginSession->mac_address = $meta['MAC'];
+                    $loginSession->ip_address = $meta['wifiIP'];
+                    $loginSession->manufacturer = $meta['manufacturer'];
+                    $loginSession->model = $meta['model'];
+                    $loginSession->sdk = $meta['sdk'];
+                    $loginSession->brand = $meta['brand'];
+                    $loginSession->save();
+                }catch (\Throwable $th) {
+                    Log::error('ERROR inside register() during meta record insertion');
+                    Log::error('ERROR: ' .$th->getMessage());
+                }
+
+
                 $user->save();
                 $user->assignRole('Customer');
                 Log::info('Assigned Role: Customer');
@@ -551,6 +599,7 @@ class UserController extends Controller
                     $this->saveToken($user->id, $request->pushToken);
                     Log::info('Push Token Saved successfully');
                 }
+
 
                 $response = [
                     'success' => true,

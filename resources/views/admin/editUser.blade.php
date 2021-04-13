@@ -1,6 +1,37 @@
 @extends('admin.layouts.master')
 @section("title") Edit User - Dashboard
 @endsection
+
+@section('scripts')
+    @if(isset($sessions))
+        @if($user->hasRole('Delivery Guy') && sizeof($sessions) > 0)
+            <script
+                    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCt_14My2CYghVw6eZFSYFlFPBOK29lkww&callback=initMap&libraries=&v=weekly"
+                    defer
+            ></script>
+
+            <script>
+                // Initialize and add the map
+                function initMap() {
+                    // The location of Uluru
+                    const uluru = { lat: {{json_decode(json_decode($sessions[0]->location))->lat}}, lng: {{json_decode(json_decode($sessions[0]->location))->lng}} };
+                    // The map, centered at Uluru
+                    const map = new google.maps.Map(document.getElementById("map"), {
+                        zoom: 13,
+                        center: uluru,
+                    });
+                    // The marker, positioned at Uluru
+                    const marker = new google.maps.Marker({
+                        position: uluru,
+                        map: map,
+                    });
+                }
+            </script>
+        @endif
+    @endif
+@endsection
+
+
 @section('content')
 <style>
     #showPassword {
@@ -264,6 +295,56 @@
                     </form>
                 </div>
             </div>
+
+            @if($user->hasRole('Delivery Guy'))
+                <div class="card" style="max-height: 360px;">
+                    <div class="card-body">
+                        <h4>Time Log</h4>
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th scope="col">Login Time</th>
+                                <th scope="col">Logout Time</th>
+                                <th scope="col">Status</th>
+                            </tr>
+                            </thead>
+                            @if(empty($sessions))
+                                <div class="alert alert-danger p-2">
+                                    <h6>No Data Available!</h6>
+                                </div>
+                            @endif
+                            <tbody style="overflow: scroll">
+                            @foreach($sessions as $session)
+                                <tr>
+                                    <td>
+                                        {{ date("d/m/y (H:i a)", strtotime($session->login_at))}}
+                                    </td>
+                                    <td>
+                                        @if($session->logout_at==NULL)
+                                            N/A
+                                        @else
+                                            {{ date("d/m/y (H:i a)", strtotime($session->logout_at))}}
+                                        @endif
+                                    </td>
+                                    <th class="{{($session->logout_at==NULL)?'text-success':'text-danger'}}" scope="row">{{($session->logout_at==NULL)?'Online':'Offline'}}</th>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
+
+            @if($user->hasRole('Delivery Guy'))
+                <div class="card">
+                    <div class="card-body">
+                        <h4>Live Location</h4>
+                        <br />
+                        <div style="height: 370px;" id="map"></div>
+                    </div>
+                </div>
+            @endif
+
         </div>
     </div>
     <div class="row" id="tansactionsDiv">
