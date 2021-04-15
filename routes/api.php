@@ -58,6 +58,10 @@ Route::post('/promo-slider', [
     'uses' => 'PromoSliderController@promoSlider',
 ]);
 
+Route::post('/home', [
+    'uses' => 'HomeController@loadHome',
+]);
+
 Route::post('/get-delivery-restaurants', [
     'uses' => 'RestaurantController@getDeliveryRestaurants',
 ]);

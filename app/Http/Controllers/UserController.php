@@ -402,20 +402,19 @@ class UserController extends Controller
 
 
                         try{
-                            $meta = $request->meta;
-                            if($meta != null){
+                            if($request->meta != null){
                                 $loginSession =  LoginSession::where('user_id', $user->id)->get()->first();
                                 if(!$loginSession){
                                     $loginSession = new LoginSession();
                                     $loginSession->user_id = $user->id;
                                 }
                                 $loginSession->login_at = Carbon::now();
-                                $loginSession->mac_address = $meta['MAC'];
-                                $loginSession->ip_address = $meta['wifiIP'];
-                                $loginSession->manufacturer = $meta['manufacturer'];
-                                $loginSession->model = $meta['model'];
-                                $loginSession->sdk = $meta['sdk'];
-                                $loginSession->brand = $meta['brand'];
+                                $loginSession->mac_address = isset($request->meta['MAC']) ? $request->meta['MAC'] : null;
+                                $loginSession->ip_address = isset($request->meta['wifiIP']) ? $request->meta['wifiIP'] : null;
+                                $loginSession->manufacturer = isset($request->meta['manufacturer']) ? $request->meta['manufacturer'] : null;
+                                $loginSession->model = isset($request->meta['model']) ? $request->meta['model'] : null;
+                                $loginSession->sdk = isset($request->meta['sdk']) ? $request->meta['sdk'] : null;
+                                $loginSession->brand = isset($request->meta['brand']) ? $request->meta['brand'] : null;
                                 $loginSession->save();
 
                             }
@@ -559,21 +558,30 @@ class UserController extends Controller
                 }
 
                 try{
-                    $meta = $request->meta;
-                    if($meta != null)$user->meta = $meta;
+                    if($request->referral_code != null){
+                        $user->referral_code = $request->referral_code;
+                    }
+                }catch (\Throwable $th) {
+                    Log::error('ERROR inside register() during meta record insertion');
+                    Log::error('ERROR: ' .$th->getMessage());
+                }
+
+                try{
+                    if($request->meta != null)$user->meta = $request->meta;
                     $loginSession =  LoginSession::where('user_id', $user->id)->get()->first();
                     if(!$loginSession){
                         $loginSession = new LoginSession();
                         $loginSession->user_id = $user->id;
                     }
                     $loginSession->login_at = Carbon::now();
-                    $loginSession->mac_address = $meta['MAC'];
-                    $loginSession->ip_address = $meta['wifiIP'];
-                    $loginSession->manufacturer = $meta['manufacturer'];
-                    $loginSession->model = $meta['model'];
-                    $loginSession->sdk = $meta['sdk'];
-                    $loginSession->brand = $meta['brand'];
+                    $loginSession->mac_address = isset($request->meta['MAC']) ? $request->meta['MAC'] : null;
+                    $loginSession->ip_address = isset($request->meta['wifiIP']) ? $request->meta['wifiIP'] : null;
+                    $loginSession->manufacturer = isset($request->meta['manufacturer']) ? $request->meta['manufacturer'] : null;
+                    $loginSession->model = isset($request->meta['model']) ? $request->meta['model'] : null;
+                    $loginSession->sdk = isset($request->meta['sdk']) ? $request->meta['sdk'] : null;
+                    $loginSession->brand = isset($request->meta['brand']) ? $request->meta['brand'] : null;
                     $loginSession->save();
+
                 }catch (\Throwable $th) {
                     Log::error('ERROR inside register() during meta record insertion');
                     Log::error('ERROR: ' .$th->getMessage());

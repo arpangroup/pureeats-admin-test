@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Item;
+use App\PromoSlider;
 use App\Restaurant;
 use App\StoreWarning;
 use App\User;
@@ -11,6 +12,7 @@ use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Modules\DeliveryAreaPro\DeliveryArea;
 use Modules\SuperCache\SuperCache;
 use Nwidart\Modules\Facades\Module;
@@ -19,6 +21,8 @@ use ErrorCode;
 use App\Exceptions\AuthenticationException;
 use App\Exceptions\ValidationException;
 use Ixudra\Curl\Facades\Curl;
+use Tymon\JWTAuth\Providers\Auth\Illuminate;
+
 
 class RestaurantController extends Controller
 {
@@ -198,6 +202,7 @@ class RestaurantController extends Controller
         }
     }
 
+
     /**
      * @param Request $request
      * @return mixed
@@ -214,12 +219,12 @@ class RestaurantController extends Controller
         } else {         
             $restaurants = Restaurant::where('is_accepted', '1')
                 ->where('is_active', 1)
-                //->whereIn('delivery_type', [1, 3])
-                ->with(['coupons' => function($query){
-                    $query->where('is_exclusive', 1);
-                    $query->select('name', 'code')->get();
-                    $query->take(1);
-                }])
+                ->whereIn('delivery_type', [1, 3])
+//                ->with(['coupons' => function($query){
+//                    $query->where('is_exclusive', 1);
+//                    $query->select('name', 'code')->get();
+//                    $query->take(1);
+//                }])
                 ->ordered()
                 ->get();
             $this->processSuperCache('stores-delivery-active', $restaurants);
@@ -277,7 +282,9 @@ class RestaurantController extends Controller
 
         // $nearMe = $nearMe->shuffle()->sortByDesc('is_featured');
         $nearMe = $nearMe->map(function ($restaurant) {
-            return $restaurant->only(['id', 'name', 'description', 'image', 'rating', 'delivery_time', 'price_range', 'slug', 'is_featured', 'is_active', 'coupons', 'schedule', 'latitude', 'longitude']);
+            //return $restaurant->only(['id', 'name', 'description', 'image', 'rating', 'delivery_time', 'price_range', 'slug', 'is_featured', 'is_active', 'coupons', 'schedule', 'latitude', 'longitude']);
+            //hide coupons from response
+            return $restaurant->only(['id', 'name', 'description', 'latitude', 'longitude', 'image', 'rating', 'delivery_time', 'price_range', 'slug', 'is_featured', 'is_active', 'schedule']);
         });
 
         //return response()->json($nearMe);
@@ -324,8 +331,10 @@ class RestaurantController extends Controller
             }
         }
         $nearMeInActive = $nearMeInActive->map(function ($restaurant) {
-            return $restaurant->only(['id', 'name', 'description', 'image', 'rating', 'delivery_time', 'price_range', 'slug', 'is_featured', 'is_active', 'coupons', 'schedule','latitude', 'longitude']);
-            // return $restaurant->only(['id', 'name', 'description', 'image', 'rating', 'delivery_time', 'price_range', 'slug', 'is_featured', 'is_active', 'coupons', 'schedule', 'latitude', 'longitude', 'deliveryTimeVal', 'deliveryTimeText', 'deliveryDistanceVal', 'deliveryDistanceText']);
+            //return $restaurant->only(['id', 'name', 'description', 'image', 'rating', 'delivery_time', 'price_range', 'slug', 'is_featured', 'is_active', 'coupons', 'schedule','latitude', 'longitude']);
+            //hide coupons from response
+            return $restaurant->only(['id', 'name', 'description', 'latitude', 'longitude', 'image', 'rating', 'delivery_time', 'price_range', 'slug', 'is_featured', 'is_active', 'schedule']);
+
         });
         $nearMeInActive = $nearMeInActive->toArray();
 
@@ -998,5 +1007,10 @@ class RestaurantController extends Controller
         
 
     }
-    
-};
+
+
+
+
+
+
+    };
