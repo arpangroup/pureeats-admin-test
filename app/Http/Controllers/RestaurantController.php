@@ -896,18 +896,32 @@ class RestaurantController extends Controller
     { 
         
         // Cache::forget('store-info-' . $slug);
-        Cache::forever('items-cache', 'true'); 
-        
-        $restaurant = Restaurant::where('id', $request->restaurant_id)
-            ->with(['coupons' => function($query){
-                $query->where('is_exclusive', 1);
-                //$query->select('name', 'code')->get();
-                //$query->take(1);
-            }])
-            ->with(['payment_gateways_active' => function($query){
-                //$query->select('id', 'name')->get();
-            }])
-            ->first();
+        Cache::forever('items-cache', 'true');
+
+        if($request->slug){
+            $restaurant = Restaurant::where('slug', $request->slug)
+                ->with(['coupons' => function($query){
+                    $query->where('is_exclusive', 1);
+                    //$query->select('name', 'code')->get();
+                    //$query->take(1);
+                }])
+                ->with(['payment_gateways_active' => function($query){
+                    //$query->select('id', 'name')->get();
+                }])
+                ->first();
+        }else{
+            $restaurant = Restaurant::where('id', $request->restaurant_id)
+                ->with(['coupons' => function($query){
+                    $query->where('is_exclusive', 1);
+                    //$query->select('name', 'code')->get();
+                    //$query->take(1);
+                }])
+                ->with(['payment_gateways_active' => function($query){
+                    //$query->select('id', 'name')->get();
+                }])
+                ->first();
+        }
+
         $restaurant['schedule'] = $this->getScheduleData($restaurant);
        
         if($request->latitude && $request->longitude){                    
