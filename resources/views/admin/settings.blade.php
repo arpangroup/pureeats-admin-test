@@ -2842,9 +2842,9 @@
                     <label class="col-lg-3 col-form-label"><strong>Store Display Type:</strong></label>
                     <div class="col-lg-9">
                         <select name="storeDisplayType" class="form-control form-control-lg select">
-                            <option value="1" @if(config('settings.storeDisplayType') == "1") selected @endif>Vertical Layout</option>
-                            <option value="2" @if(config('settings.storeDisplayType') == "2") selected @endif>Horizontal Layout</option>
-                            <option value="3" disabled @if(config('settings.storeDisplayType') == "3") selected @endif>Grid Layout</option>
+                            <option value="STORE_WITH_FULL_WIDTH_IMAGE_LAYOUT" @if(config('settings.storeDisplayType') == "STORE_WITH_FULL_WIDTH_IMAGE_LAYOUT") selected @endif>Vertical Layout</option>
+                            <option value="STORE_WITH_SMALL_IMAGE_LAYOUT" @if(config('settings.storeDisplayType') == "STORE_WITH_SMALL_IMAGE_LAYOUT") selected @endif>Horizontal Layout</option>
+                            <option value="STORE_GRID_LAYOUT" disabled @if(config('settings.storeDisplayType') == "STORE_GRID_LAYOUT") selected @endif>Grid Layout</option>
                         </select>
 {{--                        <span class="help-text text-muted mt-2"> The lesser the value, the more load on the server. Recommended is <strong>15 Seconds </strong></span>--}}
                     </div>
