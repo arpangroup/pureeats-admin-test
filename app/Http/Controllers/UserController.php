@@ -6,6 +6,7 @@ use App\Address;
 use App\User;
 use App\LoginSession;
 use Carbon\Carbon;
+use http\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -476,17 +477,26 @@ class UserController extends Controller
 
 
     private function validateRegisterRequest($request){
-        if($request->email && $request->phone && $request->name && $request->password){
+        Log::info('#############################################################');
+        Log::info('Inside validateRegisterUser()');
+        Log::info('#############################################################');
 
+        if($request->email && $request->phone && $request->name && $request->password){
+            // Check unique Phone/Email
             $checkEmail = User::where('email', $request->email)
                 //->where('is_email_verified', 1)
                 ->first();
             $checkPhone = User::where('phone', $request->phone)->first();
-    
             if ($checkPhone || $checkEmail) {// if phone or email already exist
                 if ($checkPhone)throw new ValidationException(ErrorCode::DUPLICATE_MOBILE_NUMBER, "phone already registered");
                 if ($checkEmail)throw new ValidationException(ErrorCode::DUPLICATE_EMAIL_ID, "Email already registered");
             }
+
+            // Check referral code
+            if(isset($request->referral_code)){
+                // validate the referral code from referral code table
+            }
+
         }else{
             if(!$request->email)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "email should not be null");
             if(!$request->phone)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "phone should not be null");
@@ -494,6 +504,7 @@ class UserController extends Controller
         }
 
     }
+
 
     /**
     * @param Request $request
@@ -544,30 +555,40 @@ class UserController extends Controller
 
                 // Add address if address present
                 Log::info('Check if user provide address in registration request');
-                if ($request->address != null && $request->address['lat'] != null) {
-                    Log::info('ADDRESS: ' .$request->address);
-                    $address = new Address();
-                    $address->user_id = $user->id;
-                    $address->latitude = $request->address['lat'];
-                    $address->longitude = $request->address['lng'];
-                    $address->address = $request->address['address'];
-                    $address->house = $request->address['house'];
-                    $address->tag = $request->address['tag'];
-                    $address->save();
-                    $user->default_address_id = $address->id;
+                try{
+                    if ($request->default_address != null && $request->default_address['latitude'] != null && $request->default_address['longitude'] != null) {
+                        Log::info('ADDRESS: '.json_encode($request->default_address));
+                        $address = new Address();
+                        $address->user_id = $user->id;
+                        $address->latitude = $request->default_address['latitude'];
+                        $address->longitude = $request->default_address['longitude'];
+                        $address->address = isset($request->default_address['address']) ? $request->default_address['address'] : "" ;
+                        $address->house = isset($request->default_address['house']) ? $request->default_address['house'] : "";
+                        $address->tag = isset($request->default_address['tag']) ? $request->default_address['tag'] : "";
+                        $address->save();
+                        $user->default_address_id = $address->id;
+                    }
+                }catch (\Throwable $th) {
+                    Log::error('ERROR inside register() during default address insertion: ' .$th->getMessage());
                 }
 
+
                 try{
-                    if($request->referral_code != null){
+                    Log::info('Check if user provide referral_code in registration request');
+                    if(isset($request->referral_code)){
                         $user->referral_code = $request->referral_code;
                     }
                 }catch (\Throwable $th) {
-                    Log::error('ERROR inside register() during meta record insertion');
+                    Log::error('ERROR inside referral_code insertion during meta record insertion');
                     Log::error('ERROR: ' .$th->getMessage());
                 }
 
                 try{
-                    if($request->meta != null)$user->meta = $request->meta;
+                    if($request->meta != null){
+                        $user->meta = json_encode($request->meta);
+                        Log::error('META added');
+                    }
+
                     $loginSession =  LoginSession::where('user_id', $user->id)->get()->first();
                     if(!$loginSession){
                         $loginSession = new LoginSession();
