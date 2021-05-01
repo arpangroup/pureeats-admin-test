@@ -124,7 +124,12 @@ class DeliveryController extends Controller
                     $verifyResponse = $sms->verifyOtp($request->phone, $request->otp);
                     if($verifyResponse['valid_otp'] == true){
                         Log::info('OTP Verification: true');
-                        $user->password = \Hash::make($request->otp);
+                        $password = \Hash::make($request->otp);
+                        $user->password = $password;
+                        $user->save();
+
+                        $token = self::getTokenFromPhoneAndPassword($request->phone, $request->otp);
+                        $user->auth_token = $token;
                         $user->save();
 
                         Log::info('Saving push token......');
@@ -174,12 +179,14 @@ class DeliveryController extends Controller
                                 'completedCount' => $completedDeliveriesCount,
                                 'push_token'=>$request->push_token,
 
-                                'nick_name' => $user->delivery_guy_detail->name,
-                                'age' => $user->delivery_guy_detail->age,
-                                'photo' => $user->delivery_guy_detail->photo,
-                                'phone' => $user->phone,
-                                'vehicle_number'=>$user->delivery_guy_detail->vehicle_number,
-                                'description' => $user->delivery_guy_detail->description
+//                                'nick_name' => $user->delivery_guy_detail->name,
+//                                'age' => $user->delivery_guy_detail->age,
+//                                'photo' => $user->delivery_guy_detail->photo,
+//                                'phone' => $user->phone,
+//                                'vehicle_number'=>$user->delivery_guy_detail->vehicle_number,
+//                                'description' => $user->delivery_guy_detail->description,
+
+
                             ],
                         ];
                         return response()->json($response, 201);
