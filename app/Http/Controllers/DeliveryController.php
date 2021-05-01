@@ -4,11 +4,16 @@ namespace App\Http\Controllers;
 
 use App\AcceptDelivery;
 use App\DeliveryCollection;
+use App\Exceptions\AuthenticationException;
+use App\Exceptions\ValidationException;
 use App\Helpers\TranslationHelper;
+use App\LoginSession;
 use App\Order;
 use App\Orderitem;
 use App\PushNotify;
+use App\PushToken;
 use App\RestaurantEarning;
+use App\Sms;
 use App\User;
 use Auth;
 use Carbon\Carbon;
@@ -47,9 +52,167 @@ class DeliveryController extends Controller
     }
 
     /**
+     * @param $phone
+     * @param $password
+     * @return mixed
+     */
+    private function getTokenFromPhoneAndPassword($phone, $password)
+    {
+        $token = null;
+        //$credentials = $request->only('email', 'password');
+        try {
+            if (!$token = JWTAuth::attempt(['phone' => $phone, 'password' => $password])) {
+                return response()->json([
+                    'response' => 'error',
+                    'message' => 'Password or phone is invalid..',
+                    'token' => $token,
+                ]);
+            }
+        } catch (JWTAuthException $e) {
+            return response()->json([
+                'response' => 'error',
+                'message' => 'Token creation failed',
+            ]);
+        }
+        return $token;
+    }
+
+
+
+    /**
+     * @param $user_id
+     * @param $push_token
+     */
+    private function savePushToken($user_id, $push_token)
+    {
+        $pushToken = PushToken::where('user_id', $user_id)->first();
+
+        if ($pushToken) {
+            //update the existing token
+            $pushToken->token = $push_token;
+            $pushToken->save();
+        } else {
+            //create new token for user
+            $pushToken = new PushToken();
+            $pushToken->token = $push_token;
+            $pushToken->user_id = $user_id;
+            $pushToken->save();
+        }
+        $success = $push_token;
+        return response()->json($success);
+    }
+
+
+
+    /**
      * @param Request $request
      */
     public function login(Request $request)
+    {
+        Log::info('#############################################################');
+        Log::info('Inside loginUsingOtp() :: Role: DELIVERY_GUY');
+        Log::info('#############################################################');
+        if($request->phone && $request->otp){
+            //  First check phone is valid  or not
+            $user = \App\User::where('phone', $request->phone)->get()->first();
+            Log::info('IsRoleCustomer: ' .$user->hasRole('Customer'));
+            if($user && $user->hasRole('Delivery Guy')){
+                if($user->is_active == 1){
+                    Log::info('IsActive: ' .$user->is_active);
+                    $sms = new Sms();
+                    Log::info('Calling Verify OTP.....: ');
+                    $verifyResponse = $sms->verifyOtp($request->phone, $request->otp);
+                    if($verifyResponse['valid_otp'] == true){
+                        Log::info('OTP Verification: true');
+                        $user->password = \Hash::make($request->otp);
+                        $user->save();
+
+                        Log::info('Saving push token......');
+                        if($request->push_token){
+                            $this->savePushToken($user->id, $request->push_token);
+                        }
+
+                        try{
+                            if($request->meta != null){
+                                $loginSession =  LoginSession::where('user_id', $user->id)->get()->first();
+                                if(!$loginSession){
+                                    $loginSession = new LoginSession();
+                                    $loginSession->user_id = $user->id;
+                                }
+                                $loginSession->login_at = Carbon::now();
+                                $loginSession->mac_address = isset($request->meta['MAC']) ? $request->meta['MAC'] : null;
+                                $loginSession->ip_address = isset($request->meta['wifiIP']) ? $request->meta['wifiIP'] : null;
+                                $loginSession->manufacturer = isset($request->meta['manufacturer']) ? $request->meta['manufacturer'] : null;
+                                $loginSession->model = isset($request->meta['model']) ? $request->meta['model'] : null;
+                                $loginSession->sdk = isset($request->meta['sdk']) ? $request->meta['sdk'] : null;
+                                $loginSession->brand = isset($request->meta['brand']) ? $request->meta['brand'] : null;
+                                $loginSession->save();
+
+                            }
+                        }catch (\Throwable $th) {
+                            Log::error('ERROR inside login() during meta record insertion');
+                            Log::error('ERROR: ' .$th->getMessage());
+                        }
+
+                        $onGoingDeliveriesCount = AcceptDelivery::whereHas('order', function ($query) {
+                            $query->whereIn('orderstatus_id', ['3', '4']);
+                        })->where('user_id', $user->id)->where('is_complete', 0)->count();
+
+                        $completedDeliveriesCount = AcceptDelivery::whereHas('order', function ($query) {
+                            $query->whereIn('orderstatus_id', ['5']);
+                        })->where('user_id', $user->id)->where('is_complete', 1)->count();
+
+                        $response = [
+                            'success' => true,
+                            'data' => [
+                                'id' => $user->id,
+                                'auth_token' => $user->auth_token,
+                                'name' => $user->name,
+                                'email' => $user->email,
+                                'wallet_balance' => $user->balanceFloat,
+                                'onGoingCount' => $onGoingDeliveriesCount,
+                                'completedCount' => $completedDeliveriesCount,
+                                'push_token'=>$request->push_token,
+
+                                'nick_name' => $user->delivery_guy_detail->name,
+                                'age' => $user->delivery_guy_detail->age,
+                                'photo' => $user->delivery_guy_detail->photo,
+                                'phone' => $user->phone,
+                                'vehicle_number'=>$user->delivery_guy_detail->vehicle_number,
+                                'description' => $user->delivery_guy_detail->description
+                            ],
+                        ];
+                        return response()->json($response, 201);
+
+                    }else{
+                        return response()->json(['success' => false,"message" => "Invalid OTP", ]);
+                    }
+                }else{
+                    throw new AuthenticationException(ErrorCode::ACCOUNT_BLOCKED, "User blocked");
+                }
+            }else{
+                if(!$user)throw new AuthenticationException(ErrorCode::PHONE_NOT_EXIST, "driver not found for " .$request->phone);
+                if(!$user->hasRole('Customer'))throw new AuthenticationException(ErrorCode::BAD_REQUEST, "Invalid Role ");
+                throw new AuthenticationException(ErrorCode::BAD_RESPONSE, "Something error happened");
+            }
+        }else{
+            if(!$request->phone)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "phone should not be null");
+            if(!$request->otp)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "otp should not be null");
+            return response()->json([
+                'success' => false,
+                "message" => "Invalid request body"
+            ]);
+        }
+
+    }
+
+
+
+
+    /**
+     * @param Request $request
+     */
+    public function loginOld(Request $request)
     {
         $user = \App\User::where('email', $request->email)->get()->first();
         if ($user && \Hash::check($request->password, $user->password)) {

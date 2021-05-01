@@ -81,7 +81,7 @@ class UserController extends Controller
      * @param $user_id
      * @param $push_token
      */
-    private function saveToken($user_id, $push_token)
+    private function savePushToken($user_id, $push_token)
     {
         $pushToken = PushToken::where('user_id', $user_id)->first();
 
@@ -99,6 +99,7 @@ class UserController extends Controller
         $success = $push_token;
         return response()->json($success);
     }
+
 
     /**
      * @param Request $request
@@ -373,7 +374,7 @@ class UserController extends Controller
 
     public function loginUsingOtp(Request $request){
         Log::info('#############################################################');
-        Log::info('Inside loginUsingOtp()');
+        Log::info('Inside loginUsingOtp() :: Role: USER');
         Log::info('#############################################################');
         if($request->phone && $request->otp){
             //  First check phone is valid  or not
@@ -393,7 +394,7 @@ class UserController extends Controller
 
                         Log::info('Saving push token......');
                         if($request->push_token){
-                            $this->saveToken($user->id, $request->push_token);
+                            $this->savePushToken($user->id, $request->push_token);
                         }
 
                         $defaultAddress = null;
@@ -625,7 +626,7 @@ class UserController extends Controller
 
                 Log::info('FIREBASE_PUSH_TOKEN' .$request->pushToken);
                 if($request->pushToken){
-                    $this->saveToken($user->id, $request->pushToken);
+                    $this->savePushToken($user->id, $request->pushToken);
                     Log::info('Push Token Saved successfully');
                 }
 
