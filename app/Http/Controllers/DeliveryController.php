@@ -167,6 +167,8 @@ class DeliveryController extends Controller
                             $query->whereIn('orderstatus_id', ['5']);
                         })->where('user_id', $user->id)->where('is_complete', 1)->count();
 
+
+
                         $response = [
                             'success' => true,
                             'data' => [
@@ -179,12 +181,12 @@ class DeliveryController extends Controller
                                 'completedCount' => $completedDeliveriesCount,
                                 'push_token'=>$request->push_token,
 
-//                                'nick_name' => $user->delivery_guy_detail->name,
-//                                'age' => $user->delivery_guy_detail->age,
-//                                'photo' => $user->delivery_guy_detail->photo,
-//                                'phone' => $user->phone,
-//                                'vehicle_number'=>$user->delivery_guy_detail->vehicle_number,
-//                                'description' => $user->delivery_guy_detail->description,
+                                'nick_name' => $user->delivery_guy_detail->name,
+                                'age' => $user->delivery_guy_detail->age,
+                                'photo' => $user->delivery_guy_detail->photo,
+                                'phone' => $user->phone,
+                                'vehicle_number'=>$user->delivery_guy_detail->vehicle_number,
+                                'description' => $user->delivery_guy_detail->description,
 
 
                             ],

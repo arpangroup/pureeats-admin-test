@@ -248,7 +248,6 @@ class AdminController extends Controller
             if ($request->has('role')) {
                 $user->assignRole($request->role);
             }
-
             if ($user->hasRole('Delivery Guy')) {
 
                 $deliveryGuyDetails = new DeliveryGuyDetail();
@@ -351,9 +350,9 @@ class AdminController extends Controller
             $user->name = $request->name;
             $user->email = $request->email;
             $user->phone = $request->phone;
-            if ($request->has('password') && $request->password != null) {
-                $user->password = \Hash::make($request->password);
-            }
+            //if ($request->has('password') && $request->password != null) {
+            //    $user->password = \Hash::make($request->password);
+            //}
             if ($request->roles != null) {
                 $user->syncRoles($request->roles);
             }
@@ -362,7 +361,6 @@ class AdminController extends Controller
             if ($user->hasRole('Delivery Guy')) {
 
                 if ($user->delivery_guy_detail == null) {
-
                     $deliveryGuyDetails = new DeliveryGuyDetail();
                     $deliveryGuyDetails->name = $request->delivery_name;
                     $deliveryGuyDetails->age = $request->delivery_age;
@@ -380,7 +378,8 @@ class AdminController extends Controller
                     }
 
                     if ($request->tip_commission_rate != null) {
-                        $user->delivery_guy_detail->tip_commission_rate = $request->tip_commission_rate;
+                        //$user->delivery_guy_detail->tip_commission_rate = $request->tip_commission_rate;
+                        $deliveryGuyDetails->tip_commission_rate = $request->tip_commission_rate;
                     }
 
                     if ($request->is_notifiable == 'true') {
