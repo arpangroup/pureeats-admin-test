@@ -118,6 +118,8 @@ class DeliveryController extends Controller
             Log::info('IsRoleCustomer: ' .$user->hasRole('Customer'));
             if($user && $user->hasRole('Delivery Guy')){
                 if($user->is_active == 1){
+                    if($user->delivery_guy_detail == null)throw new AuthenticationException(ErrorCode::ACCOUNT_BLOCKED, "User'is not approved, user details not updated");
+
                     Log::info('IsActive: ' .$user->is_active);
                     $sms = new Sms();
                     Log::info('Calling Verify OTP.....: ');
