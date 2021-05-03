@@ -238,50 +238,30 @@ Route::group(['middleware' => ['jwt.auth']], function () {
         'uses' => 'NotificationController@markOneNotificationRead',
     ]);
 
-    Route::post('/delivery/update-user-info', [
-        'uses' => 'DeliveryController@updateDeliveryUserInfo',
-    ]);
 
-    Route::post('/delivery/get-delivery-orders', [
-        'uses' => 'DeliveryController@getDeliveryOrders',
-    ]);
-
-    Route::post('/delivery/get-single-delivery-order', [
-        'uses' => 'DeliveryController@getSingleDeliveryOrder',
-    ]);
-
-    Route::post('/delivery/set-delivery-guy-gps-location', [
-        'uses' => 'DeliveryController@setDeliveryGuyGpsLocation',
-    ]);
-
-    Route::post('/delivery/get-delivery-guy-gps-location', [
-        'uses' => 'DeliveryController@getDeliveryGuyGpsLocation',
-    ]);
-
-    Route::post('/delivery/accept-to-deliver', [
-        'uses' => 'DeliveryController@acceptToDeliver',
-    ]);
-
-    Route::post('/delivery/pickedup-order', [
-        'uses' => 'DeliveryController@pickedupOrder',
-    ]);
-
-    Route::post('/delivery/deliver-order', [
-        'uses' => 'DeliveryController@deliverOrder',
-    ]);
-
-    Route::post('/conversation/chat', [
-        'uses' => 'ChatController@deliveryCustomerChat',
-    ]);
-
-    Route::post('/change-avatar', [
-        'uses' => 'UserController@changeAvatar',
-    ]);
-
-    Route::post('/check-ban', [
-        'uses' => 'UserController@checkBan',
-    ]);
+    /*#################################### DELIVERY ###################################*/
+    Route::post('/delivery/dashboard', ['uses' => 'DeliveryController@dashboard',]);
+    Route::post('/delivery/update-user-info', ['uses' => 'DeliveryController@updateDeliveryUserInfo', ]);
+    Route::post('/delivery/get-delivery-orders', ['uses' => 'DeliveryController@getDeliveryOrders', ]);
+    Route::post('/delivery/get-single-delivery-order', ['uses' => 'DeliveryController@getSingleDeliveryOrder',]);
+    Route::post('/delivery/set-delivery-guy-gps-location', ['uses' => 'DeliveryController@setDeliveryGuyGpsLocation', ]);
+    Route::post('/delivery/get-delivery-guy-gps-location', ['uses' => 'DeliveryController@getDeliveryGuyGpsLocation',]);
+    Route::post('/delivery/accept-to-deliver', ['uses' => 'DeliveryController@acceptToDeliver', ]);
+    Route::post('/delivery/reached-to-pickup-location', ['uses' => 'DeliveryController@reachedPickUpLocation',]);//NEW
+    Route::post('/delivery/pickedup-order', ['uses' => 'DeliveryController@pickedupOrder',]);
+    Route::post('/delivery/reached-to-deliver-location', ['uses' => 'DeliveryController@reachedDeliveryLocation',]);//NEW
+    Route::post('/delivery/deliver-order', ['uses' => 'DeliveryController@deliverOrder',]);
+    Route::post('/delivery/send-message', ['uses' => 'DeliveryController@sendMessageToCustomer',]);//NEW
+    Route::post('/delivery/logout', ['uses' => 'DeliveryController@logoutDeliveryGuy',]);//NEW
+    Route::post('/conversation/chat', ['uses' => 'ChatController@deliveryCustomerChat',]);
+    Route::post('/change-avatar', ['uses' => 'UserController@changeAvatar',]);
+    Route::post('/check-ban', ['uses' => 'UserController@checkBan',]);
 });
+
+Route::get('/delivery/get-login-history/{user_id}', ['uses' => 'DeliveryController@getLoginHistory',]);//NEW
+Route::get('/delivery/get-trip-details/{order_id}', ['uses' => 'DeliveryController@getTripDetails',]);
+Route::get('/delivery/get-trip-summary/{rider_id}', ['uses' => 'DeliveryController@getTripSummary',]);
+
 /* END Protected Routes */
 
 Route::post('/get-coupons', [

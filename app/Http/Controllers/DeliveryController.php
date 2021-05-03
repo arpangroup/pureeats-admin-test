@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\AcceptDelivery;
 use App\DeliveryCollection;
+use App\DeliveryCollectionLog;
 use App\Exceptions\AuthenticationException;
 use App\Exceptions\ValidationException;
 use App\Helpers\TranslationHelper;
@@ -891,5 +892,119 @@ class DeliveryController extends Controller
             }
         }
     }
+
+
+
+
+
+
+    /*############################# 02-May-2021[START] #####################################*/
+
+    public function dashboard(Request $request){
+        $user = \http\Client\Curl\User::where('id', $request->user_id)->first();
+        if ($user) {
+            //$earnings = $user->transactions()->orderBy('id', 'DESC')->get();
+
+            $todaysEarning = $user->transactions()->whereDate('created_at', Carbon::today())->orderBy('id', 'DESC')->get();
+            $yesterdaysEarning = $user->transactions()->whereDate('created_at', Carbon::yesterday())->orderBy('id', 'DESC')->get();
+            $thisWeekEarning = $user->transactions()->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->orderBy('id', 'DESC')->get();
+            $thisMonthEarning = $user->transactions()->whereYear('created_at', Carbon::now()->year)->whereMonth('created_at', Carbon::now()->month)->orderBy('id', 'DESC')->get();
+
+
+            $todaysCompletedDeliveriesCount = AcceptDelivery::whereHas('order', function ($query) {
+                $query->whereIn('orderstatus_id', ['5'])->whereDate('created_at', Carbon::today());
+            })->where('user_id', $user->id)->where('is_complete', 1)->count();
+
+            //$yesterday = date("Y-m-d", strtotime( '-1 days' ) );
+            $yesterdaysCompletedDeliveriesCount = AcceptDelivery::whereHas('order', function ($query) {
+                $query->whereIn('orderstatus_id', ['5'])->where('created_at', '=', Carbon::yesterday());
+                //$query->whereIn('orderstatus_id', ['5'])->where('created_at', '=', $yesterday);
+            })->where('user_id', $user->id)->where('is_complete', 1)->count();
+
+
+            $thisWeekCompletedDeliveriesCount = AcceptDelivery::whereHas('order', function ($query) {
+                //$query->whereIn('orderstatus_id', ['5'])->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                $query->whereIn('orderstatus_id', ['5'])
+                    ->where('created_at', '>', Carbon::now()->startOfWeek())
+                    ->where('created_at', '<', Carbon::now()->endOfWeek());
+
+                $query->whereIn('orderstatus_id', ['5'])
+                    ->whereBetween('created_at', [
+                        Carbon::parse('last monday')->startOfDay(),
+                        Carbon::parse('next friday')->endOfDay(),
+                    ]);
+            })->where('user_id', $user->id)->where('is_complete', 1)->count();
+
+
+            $thisMonthCompletedDeliveriesCount = AcceptDelivery::whereHas('order', function ($query) {
+                $query->whereIn('orderstatus_id', ['5'])->whereYear('created_at', Carbon::now()->year)->whereMonth('created_at', Carbon::now());
+            })->where('user_id', $user->id)->where('is_complete', 1)->count();
+
+
+            $cashOnHold = 0;
+            $lastPayment = 0;
+            $deliveryCollection = DeliveryCollection::where('user_id', $user->id)->first();
+            if($deliveryCollection) {
+                $cashOnHold = $deliveryCollection->amount;
+
+                $lastLog = DeliveryCollectionLog::where('delivery_collection_id', $deliveryCollection->id)->orderBy('id', 'desc')->first();
+                //return response()->json($lastLog, 201);
+                if($lastLog) $lastPayment = $lastLog->amount;
+            }
+
+            $response = [
+                'success' => true,
+                'data' => [
+                    //Todays
+                    //'todays_earnings' => $todaysEarning,
+                    'todays_order_count' => $todaysCompletedDeliveriesCount,
+                    'todays_earning_amount' => $this->getTotalDepositAmount($todaysEarning),
+                    //Yesterdays
+                    //'yesterday_earnings' => $yesterdaysEarning,
+                    'yesterday_order_count' => $yesterdaysCompletedDeliveriesCount,
+                    'yesterday_earning_amount' => $this->getTotalDepositAmount($yesterdaysEarning),
+                    //Week
+                    //'this_week_earnings' => $yesterdaysEarning,
+                    'this_week_order_count' => $thisWeekCompletedDeliveriesCount,
+                    'this_week_earning_amount' => $this->getTotalDepositAmount($thisWeekEarning),
+                    //Week
+                    //'this_month_earnings' => $thisWeekEarning,
+                    'this_month_order_count' => $thisMonthCompletedDeliveriesCount,
+                    'this_month_earning_amount' => $this->getTotalDepositAmount($thisMonthEarning),
+                    //'cash_in_hold' => ($delideliveryCollection != null) ? $deliveryCollection->amount : 0,
+                    'cash_in_hold' => 0,
+                    'last_payment' => $lastPayment
+                ],
+            ];
+            return response()->json($response, 201);
+
+        }
+
+
+        $response = ['success' => false, 'data' => 'Record doesnt exists'];
+    }
+
+    private function getTotalDepositAmount($transactions){
+        $totalEarnings = 0;
+        foreach ($transactions as $transaction) {
+            if ($transaction->type === 'deposit') {
+                $totalEarnings += $transaction->amount / 100;
+            }
+        }
+        return $totalEarnings;
+    }
+    private function getTotalWithdrawAmount($transactions){
+        $totalEarnings = 0;
+        foreach ($transactions as $transaction) {
+            if ($transaction->type === 'withdraw') {
+                $totalEarnings += $transaction->amount / 100;
+            }
+        }
+        return $totalEarnings;
+    }
+
+
+    /*############################# 02-May-2021[END] #####################################*/
+
 
 }
