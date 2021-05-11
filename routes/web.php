@@ -151,6 +151,14 @@ Route::group(['prefix' => 'admin', 'middleware' => ['admin']], function () {
     Route::post('/order/accept-order', 'AdminController@acceptOrderFromAdmin')->name('admin.acceptOrderFromAdmin');
     Route::post('/order/assign-delivery', 'AdminController@assignDeliveryFromAdmin')->name('admin.assignDeliveryFromAdmin');
     Route::post('/order/reassign-delivery', 'AdminController@reAssignDeliveryFromAdmin')->name('admin.reAssignDeliveryFromAdmin');
+    //NEW[11-May-2021]
+    Route::post('/order/ready-order', 'AdminController@readyOrderFromAdmin')->name('admin.readyOrderFromAdmin');
+    Route::post('/order/pickup-order', 'AdminController@pickedupOrderFromAdmin')->name('admin.pickedupOrderFromAdmin');
+    Route::post('/order/deliver-selfpickup-order', 'AdminController@markSelfPickupOrderAsCompletedFromAdmin')->name('admin.markSelfPickupOrderAsCompletedFromAdmin');
+    Route::post('/order/reached-pickup-location', 'AdminController@reaachedPickupLocationFromAdmin')->name('admin.reaachedPickupLocationFromAdmin');
+    Route::post('/order/reached-drop-location', 'AdminController@reaachedDropLocationFromAdmin')->name('admin.reaachedDropLocationFromAdmin');
+    Route::post('/order/deliver-order', 'AdminController@deliverOrder')->name('admin.deliverOrder');
+
 
     Route::get('/sliders', 'AdminController@sliders')->name('admin.sliders');
     Route::get('/sliders/disable/{id}', 'AdminController@disableSlider')->name('admin.disableSlider');

@@ -651,6 +651,60 @@ class DeliveryController extends Controller
 
     }
 
+
+    /**
+     * @param Request $request
+     */
+    public function reachedPickUpLocation(Request $request)
+    {
+
+        $deliveryUser = auth()->user();
+
+        if ($deliveryUser && $deliveryUser->hasRole('Delivery Guy')) {
+
+            $order = Order::where('id', $request->order_id)->first();
+
+            if ($order) {
+
+                $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
+                $commission = 0;
+                if (config('settings.deliveryGuyCommissionFrom') == 'FULLORDER') {
+                    $commission = $deliveryGuyCommissionRate / 100 * $order->total;
+                }
+                if (config('settings.deliveryGuyCommissionFrom') == 'DELIVERYCHARGE') {
+                    $commission = $deliveryGuyCommissionRate / 100 * $order->delivery_charge;
+                }
+
+                $order->extra_status = 'REACHED_PICKUP_LOCATION'; //Reached to restaurant
+                $order->save();
+
+
+                // Notify to the restaurant that DeliveryGuy has reached to pickup the order
+                if (config('settings.enablePushNotificationOrders') == 'true') {
+                    $notify = new PushNotify();
+                    //$notify->sendPushNotification('4', $order->user_id, $order->unique_order_id);
+                }
+
+                $singleOrder = Order::where('id', $request->order_id)
+                    ->with('restaurant')
+                    ->with('orderitems.order_item_addons')
+                    ->with(array('user' => function ($query) {
+                        $query->select('id', 'name', 'phone');
+                    }))
+                    ->first();
+
+
+
+                $singleOrder->commission = number_format((float) $commission, 2, '.', '');
+
+                return response()->json($singleOrder);
+            }else{
+                throw new ValidationException(\ErrorCode::BAD_REQUEST, "Invalid order_id");
+            }
+        }
+    }
+
+
     /**
      * @param Request $request
      */
@@ -697,12 +751,91 @@ class DeliveryController extends Controller
         }
     }
 
+
+    /**
+     * @param Request $request
+     */
+    public function reachedDropLocation(Request $request)
+    {
+
+        $deliveryUser = auth()->user();
+
+        if ($deliveryUser && $deliveryUser->hasRole('Delivery Guy')) {
+
+            $order = Order::where('id', $request->order_id)->first();
+
+            if ($order) {
+
+                $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
+                $commission = 0;
+                if (config('settings.deliveryGuyCommissionFrom') == 'FULLORDER') {
+                    $commission = $deliveryGuyCommissionRate / 100 * $order->total;
+                }
+                if (config('settings.deliveryGuyCommissionFrom') == 'DELIVERYCHARGE') {
+                    $commission = $deliveryGuyCommissionRate / 100 * $order->delivery_charge;
+                }
+
+                $order->extra_status = 'REACHED_DROP_LOCATION'; //Reached to the customer location
+                $order->save();
+
+                $singleOrder = Order::where('id', $request->order_id)
+                    ->with('restaurant')
+                    ->with('orderitems.order_item_addons')
+                    ->with(array('user' => function ($query) {
+                        $query->select('id', 'name', 'phone');
+                    }))
+                    ->first();
+
+
+
+                $singleOrder->commission = number_format((float) $commission, 2, '.', '');
+
+                return response()->json($singleOrder);
+            }else{
+                throw new ValidationException(\ErrorCode::BAD_REQUEST, "Invalid order_id");
+            }
+        }
+    }
+
+    /**
+     * @param Request $request
+     */
+    public function sendMessageToCustomer(Request $request){
+        $deliveryUser = auth()->user();
+        if ($deliveryUser && $deliveryUser->hasRole('Delivery Guy')){
+            $order = Order::where('id', $request->order_id)->first();
+
+            if ($order && $order->extra_status == 'REACHED_DROP_LOCATION') {
+                if($order->is_order_reached_message_send == 0){
+                    // send the order reached message to the customer
+                    // This is not a mandatory message, if deliveryGuy seems that customer is unreachable, then he can send message
+                    $sms = new Sms();
+                    Log::info('Sending Order reached to drop location SMS ');
+                    // TRIGGER_THE _SMS..........
+                    $order->is_order_reached_message_send = '1';
+                    $order->save();
+
+                    $response = ['success' => true, "message" => "SMS send successfully"];
+                    return response()->json($response);
+                }else{
+                    throw new ValidationException(\ErrorCode::BAD_REQUEST, "SMS already send, you can send only single SMS per order");
+                }
+            }else{
+                throw new ValidationException(\ErrorCode::BAD_REQUEST, "Invalid request, order not reached the drop location");
+            }
+        }else{
+            throw new AuthenticationException(\ErrorCode::BAD_REQUEST, "Invalid Delivery User");
+        }
+    }
+
+
+
+
     /**
      * @param Request $request
      */
     public function deliverOrder(Request $request, TranslationHelper $translationHelper)
     {
-
         $keys = ['deliveryCommissionMessage', 'deliveryTipTransactionMessage'];
 
         $translationData = $translationHelper->getDefaultLanguageValuesForKeys($keys);
@@ -1003,6 +1136,78 @@ class DeliveryController extends Controller
         return $totalEarnings;
     }
 
+
+    /**
+     * @param $user
+     * @param $lat
+     * @param $lng
+     */
+    public function updateHeartBeat($user, $lat, $lng, $meta = null){
+        $location = array('lat' => $lat,'lng' => $lng, 'bearing' => '');
+        $current_date_time = Carbon::now()->toDateTimeString();// Produces something like "2019-03-11 12:25:00"
+        $current_timestamp = Carbon::now()->timestamp; // Produces something like 1552296328
+
+        $loginSession = null;
+        $existingLoginSession = LoginSession::where('user_id', $user->id)
+            //->whereNull('last_checkout_at')
+            ->orderBy('id', 'desc')->first();
+
+
+        if($existingLoginSession){
+            // Check if difference between last_seen time and current time
+            $from = Carbon::createFromFormat('Y-m-d H:i:s', $current_date_time);
+            $to = Carbon::createFromFormat('Y-m-d H:i:s', $existingLoginSession->last_checkout_at);
+            //$diffInMinutes = abs($from - $to) / 60; //Output: 20
+            $diffInMinutes = round(abs(strtotime($from) - strtotime($to)) /60, 2); //Output: 20
+            //return response()->json(["diff_in_minutes"=>$diffInMinutes]);
+
+            $THRESHOLD_TIME = 2;
+            if($diffInMinutes < $THRESHOLD_TIME){
+                $loginSession = $existingLoginSession;
+            }else{
+                $loginSession = new LoginSession();
+                $loginSession->user_id = $user->id;
+            }
+        }else{// First time
+            $loginSession = new LoginSession();
+            $loginSession->user_id = $user->id;
+        }
+
+
+        //$loginSession->login_at = $current_date_time;
+        $loginSession->last_checkout_at = $current_date_time;
+        //$loginSession->location = json_encode($location);// it save as string
+        $loginSession->location = $location;//this save the actual json data
+        $loginSession->save();
+
+        $deliveryUser = $user;
+        if ($deliveryUser->hasRole('Delivery Guy')) {
+            //update the lat, lng and heading of delivery guy
+            $deliveryUser->delivery_guy_detail->delivery_lat = $lat;
+            $deliveryUser->delivery_guy_detail->delivery_long = $lng;
+            $deliveryUser->delivery_guy_detail->heading = $meta;
+            $deliveryUser->delivery_guy_detail->save();
+        }
+
+
+    }
+
+    /**
+     * @param Request $request
+     */
+    public function scheduleHeartBeat(Request $request)
+    {
+        $user = auth()->user();
+        if ($user && $request->lat && $request->lng) {
+            $this->updateHeartBeat($user, $request->lat, $request->lng, null);
+            return $this->getDeliveryOrders($request);
+        }else{
+            if(!$user)throw new AuthenticationException(ErrorCode::PHONE_NOT_EXIST, "Customer not found for " .$request->phone);
+            if(!$request->lat)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "lat should not be null");
+            if(!$request->lng)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "lng should not be null");
+            throw new AuthenticationException(ErrorCode::BAD_RESPONSE, "Invalid request body");
+        }
+    }
 
     /*############################# 02-May-2021[END] #####################################*/
 

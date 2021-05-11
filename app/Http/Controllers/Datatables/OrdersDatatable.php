@@ -47,12 +47,19 @@ class OrdersDatatable
                 $html = '<div class="text-center"><span class="badge order-badge badge-color-' . $order->orderstatus_id . ' border-grey-800">' . $order->orderstatus->name . '</span>';
 
                 $html .= '<br> <small> Order By: ' . '<a href="' . route('admin.get.editUser', $order->user->id) . '"target="_blank" class="linked-item">' . $order->user->name . '</a></small>';
-
+                /*
                 if ($order->orderstatus_id > 2 && $order->orderstatus_id < 6) {
                     if ($order->accept_delivery && $order->accept_delivery->user && $order->accept_delivery->user->name) {
                         $html .= '<br> <small> Delivery By: ' . '<a href="' . route('admin.get.editUser', $order->accept_delivery->user->id) . '"target="_blank" class="linked-item">' . $order->accept_delivery->user->name . '</a></small>';
                     }
-                } else {
+                }
+                */
+                /*################# Modified by ARPAN [12-May-2021] *######################*/
+                if ($order->orderstatus_id = 3 || $order->orderstatus_id = 4 || $order->orderstatus_id = 5 || $order->orderstatus_id = 10 || $order->orderstatus_id = 11 || $order->orderstatus_id = 73 || $order->orderstatus_id = 710) {
+                    if ($order->accept_delivery && $order->accept_delivery->user && $order->accept_delivery->user->name) {
+                        $html .= '<br> <small> Delivery By: ' . '<a href="' . route('admin.get.editUser', $order->accept_delivery->user->id) . '"target="_blank" class="linked-item">' . $order->accept_delivery->user->name . '</a></small>';
+                    }
+                }else {
                     $html .= '</div>';
                 }
                 return $html;

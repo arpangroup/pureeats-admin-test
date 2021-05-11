@@ -241,15 +241,17 @@ Route::group(['middleware' => ['jwt.auth']], function () {
 
     /*#################################### DELIVERY ###################################*/
     Route::post('/delivery/dashboard', ['uses' => 'DeliveryController@dashboard',]);
+    Route::post('/delivery/heartbeat', ['uses' => 'DeliveryController@scheduleHeartBeat',]);//NEW
     Route::post('/delivery/update-user-info', ['uses' => 'DeliveryController@updateDeliveryUserInfo', ]);
     Route::post('/delivery/get-delivery-orders', ['uses' => 'DeliveryController@getDeliveryOrders', ]);
     Route::post('/delivery/get-single-delivery-order', ['uses' => 'DeliveryController@getSingleDeliveryOrder',]);
     Route::post('/delivery/set-delivery-guy-gps-location', ['uses' => 'DeliveryController@setDeliveryGuyGpsLocation', ]);
     Route::post('/delivery/get-delivery-guy-gps-location', ['uses' => 'DeliveryController@getDeliveryGuyGpsLocation',]);
+
     Route::post('/delivery/accept-to-deliver', ['uses' => 'DeliveryController@acceptToDeliver', ]);
     Route::post('/delivery/reached-to-pickup-location', ['uses' => 'DeliveryController@reachedPickUpLocation',]);//NEW
     Route::post('/delivery/pickedup-order', ['uses' => 'DeliveryController@pickedupOrder',]);
-    Route::post('/delivery/reached-to-deliver-location', ['uses' => 'DeliveryController@reachedDeliveryLocation',]);//NEW
+    Route::post('/delivery/reached-to-drop-location', ['uses' => 'DeliveryController@reachedDropLocation',]);//NEW
     Route::post('/delivery/deliver-order', ['uses' => 'DeliveryController@deliverOrder',]);
     Route::post('/delivery/send-message', ['uses' => 'DeliveryController@sendMessageToCustomer',]);//NEW
     Route::post('/delivery/logout', ['uses' => 'DeliveryController@logoutDeliveryGuy',]);//NEW

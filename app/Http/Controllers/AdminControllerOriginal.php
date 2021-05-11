@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\AcceptDelivery;
 use App\Addon;
 use App\AddonCategory;
-use App\DeliveryCollection;
 use App\DeliveryGuyDetail;
 use App\Helpers\TranslationHelper;
 use App\Http\Middleware\SCLC;
@@ -22,7 +21,6 @@ use App\PromoSlider;
 use App\PushNotify;
 use App\Restaurant;
 use App\RestaurantCategory;
-use App\RestaurantEarning;
 use App\RestaurantPayout;
 use App\Setting;
 use App\Slide;
@@ -214,10 +212,7 @@ class AdminController extends Controller
                 $orderStatusesData .= '{value:' . $value . ", name: 'Reached Drop Location'},";
             }
             if ($key == 73) {
-                $orderStatusesData .= '{value:' . $value . ", name: 'ORDER_READY_AND_DELIVERY_ASSIGNED'},";
-            }
-            if ($key == 710) {
-                $orderStatusesData .= '{value:' . $value . ", name: 'ORDER_READY_AND_DELIVERY_REACHED_TO_PICKUP'},";
+                $orderStatusesData .= '{value:' . $value . ", name: 'Ready for Pickup'},";
             }
         }
         $orderStatusesData = rtrim($orderStatusesData, ',');
@@ -2064,8 +2059,8 @@ class AdminController extends Controller
 
             // ** ORDERSTATUS ** //
             DB::table('orderstatuses')->truncate();
-            DB::statement("INSERT INTO `orderstatuses` (`id`, `name`) VALUES (1, 'Order Placed'), (2, 'Preparing Order'), (3, 'Delivery Guy Assigned'), (4, 'Order Picked Up'), (5, 'Delivered'), (6, 'Canceled'), (7, 'Ready For Pick Up'), (8, 'Awaiting Payment'), (9, 'Payment Failed'), (10, 'Reached Pickup Location'), (11, 'Reached Delivery Location'), (73, 'ORDER_READY_AND_DELIVERY_ASSIGNED'), (710, 'ORDER_READY_AND_DELIVERY_REACHED_TO_PICKUP')");
-
+            //DB::statement("INSERT INTO `orderstatuses` (`id`, `name`) VALUES (1, 'Order Placed'), (2, 'Preparing Order'), (3, 'Delivery Guy Assigned'), (4, 'Order Picked Up'), (5, 'Delivered'), (6, 'Canceled'), (7, 'Ready For Pick Up'), (8, 'Awaiting Payment'), (9, 'Payment Failed')"); //ORIGINAL
+            DB::statement("INSERT INTO `orderstatuses` (`id`, `name`) VALUES (1, 'Order Placed'), (2, 'Preparing Order'), (3, 'Delivery Guy Assigned123'), (4, 'Order Picked Up'), (5, 'Delivered'), (6, 'Canceled'), (7, 'Ready For Pick Up'), (8, 'Awaiting Payment'), (9, 'Payment Failed'), (10, 'Reached Pickup Location'), (11, 'Reached Delivery Location'), (73, 'ORDER_READY_AND_DELIVERY_ASSIGNED')");
             /* Save new keys for translations languages */
             $langData = file_get_contents(storage_path('language/english.json'));
             $a1 = json_decode($langData, true);
@@ -2262,10 +2257,6 @@ class AdminController extends Controller
 
         if ($order->orderstatus_id == '1') {
             $order->orderstatus_id = 2;
-            //$order->delivery_pin = strtoupper(str_random(5));
-            $order->delivery_pin = mt_rand(10000,99999);
-            $order->prepare_time = 20;
-            $order->restaurant_accept_at = Carbon::now()->toDateTimeString();//"2019-03-11 12:25:00"
             $order->save();
             // Send SMS Notification to Delivery Guy
             if (config('settings.smsDeliveryNotify') == 'true') {
@@ -2312,12 +2303,7 @@ class AdminController extends Controller
             $assignment->save();
 
             $order = Order::where('id', $request->order_id)->first();
-            if($order->orderstatus_id == '7'){
-                $order->orderstatus_id = 73;//ORDER_READY_AND_DELIVERY_ASSIGNED
-            }else{
-                $order->orderstatus_id = 3;
-            }
-            $order->rider_accept_at = Carbon::now()->toDateTimeString();//"2019-03-11 12:25:00"
+            $order->orderstatus_id = 3;
             $order->save();
             return redirect()->back()->with(array('success' => 'Order Assigned'));
         } catch (Illuminate\Database\QueryException $e) {
@@ -2715,369 +2701,6 @@ class AdminController extends Controller
             }
         }
     }
-
-
-
-    /*##################################################################################*/
-    /*                  CustomControllers[START]                                        */
-    /*##################################################################################*/
-    /**
-     * @param Request $request
-     */
-    public function readyOrderFromAdmin(Request $request)
-    {
-        $order = Order::where('id', $request->id)->first();
-        if($order == null) return redirect()->back()->with(array('message' => 'Invalid order_id'));
-
-
-        if ($order->orderstatus_id == '2' || $order->orderstatus_id == '3' || $order->orderstatus_id == '10') {// ACCEPTED OR DELIVERY_ASSIGNED OR REACHED_PICKUP_LOCATION
-            if($order->delivery_type==2){// if selfPickup
-                $order->orderstatus_id = 7;
-            }else{
-                if($order->orderstatus_id == '3'){
-                    // As delivery guy already assigned(status_id = 3), and restaurant currently marking the order as "READY", so order is ready to PICKUP
-                    $order->orderstatus_id = 73; // New status introduced to confirm ORDER_READY_FOR_PICKUP
-                }else if($order->orderstatus_id == '10'){
-                    $order->orderstatus_id = 710;
-                }else{
-                    $order->orderstatus_id = 7;  // As DeliveryGuy not accepted(status_id != 3) the order, but restaurant is marking the order as READY
-                }
-            }
-            $order->restaurant_ready_at = Carbon::now()->toDateTimeString();// Produces something like "2019-03-11 12:25:00"
-            $order->save();
-            if (config('settings.enablePushNotificationOrders') == 'true') {
-                $notify = new PushNotify();
-
-                //to user
-                $notify->sendPushNotification('7', $order->user_id, $order->unique_order_id);// ORIGINAL
-
-                //to restauranrt
-                /*
-                $restaurant = Restaurant::where('id', $order->restaurant_id)->first();
-                $order->restaurant = $restaurant;
-                //$notify->pushNotificationToDeliveryGuy($pU->id, $order);//NEW
-                */
-            }
-            return redirect()->back()->with(array('success' => 'Order Marked as Ready'));
-
-        }else{
-            return redirect()->back()->with(array('success' => 'Order is not in valid state to mark as ready. It should be among of the following three statuses \n ACCEPTED(2) OR DELIVERY_ASSIGNED(3) OR REACHED_PICKUP_LOCATION(10)'));
-        }
-    }
-
-
-    /**
-     * @param Request $request
-     */
-    public function reaachedPickupLocationFromAdmin(Request $request)
-    {
-        $order = Order::where('id', $request->id)->first();
-        if($order == null) return redirect()->back()->with(array('message' => 'Invalid order_id'));
-
-
-        if ($order->orderstatus_id == '3' || $order->orderstatus_id == '73') {
-            if($order->orderstatus_id == '3'){
-                $order->orderstatus_id = 10; // New status introduced to confirm REACHED_PICKUP_LOCATION
-            }else if($order->orderstatus_id == '73'){
-                $order->orderstatus_id = 710;  // As DeliveryGuy not accepted(status_id != 3) the order, but restaurant is marking the order as READY
-            }else{
-                $order->orderstatus_id = 10;
-            }
-            $order->rider_reached_pickup_location_at = Carbon::now()->toDateTimeString();// Produces something like "2019-03-11 12:25:00"
-            $order->save();
-            if (config('settings.enablePushNotificationOrders') == 'true') {
-                $notify = new PushNotify();
-
-                //to user
-                //$notify->sendPushNotification('7', $order->user_id, $order->unique_order_id);// ORIGINAL
-
-                //to restauranrt
-                /*
-                $restaurant = Restaurant::where('id', $order->restaurant_id)->first();
-                $order->restaurant = $restaurant;
-                //$notify->pushNotificationToDeliveryGuy($pU->id, $order);//NEW
-                */
-            }
-            return redirect()->back()->with(array('success' => 'Order Marked as Ready'));
-
-        }else{
-            return redirect()->back()->with(array('success' => 'Order is not in valid state to indicate reached in pickup location. It should be among of the following three statuses \n ASSIGNED(3) OR ORDER_READY_AND_DELIVERY_ASSIGNED(73)'));
-        }
-    }
-
-
-    /**
-     * @param Request $request
-     */
-    public function reaachedDropLocationFromAdmin(Request $request)
-    {
-        $order = Order::where('id', $request->id)->first();
-        if($order == null) return redirect()->back()->with(array('message' => 'Invalid order_id'));
-
-
-        if ($order->orderstatus_id == '4') {
-            $order->orderstatus_id = 11;
-            $order->rider_reached_drop_location_at = Carbon::now()->toDateTimeString();// Produces something like "2019-03-11 12:25:00"
-            $order->save();
-            if (config('settings.enablePushNotificationOrders') == 'true') {
-                $notify = new PushNotify();
-
-                //to user
-                //$notify->sendPushNotification('7', $order->user_id, $order->unique_order_id);// ORIGINAL
-
-                //to restauranrt
-                /*
-                $restaurant = Restaurant::where('id', $order->restaurant_id)->first();
-                $order->restaurant = $restaurant;
-                //$notify->pushNotificationToDeliveryGuy($pU->id, $order);//NEW
-                */
-            }
-            return redirect()->back()->with(array('success' => 'Order Marked as Ready'));
-
-        }else{
-            return redirect()->back()->with(array('success' => 'Order is not in valid state to indicate reached in pickup location. It should be among of the following three statuses \n ASSIGNED(3) OR ORDER_READY_AND_DELIVERY_ASSIGNED(73)'));
-        }
-    }
-
-    /**
-     * @param Request $request
-     */
-    public function pickedupOrderFromAdmin(Request $request)
-    {
-        $order = Order::where('id', $request->order_id)->first();
-
-        //if($order == null) return redirect()->back()->with(array('message' => 'Invalid order_id'));
-
-        if ($order && $order->orderstatus_id == 710) {
-            $order->orderstatus_id = 4; //PickedUp by delivery boy (Deliery Boy OnTheWay)
-            // $order->delivery_pin = strtoupper(str_random(5));
-            $order->rider_picked_at = Carbon::now()->toDateTimeString();// Produces something like "2019-03-11 12:25:00"
-            $order->save();
-
-            if (config('settings.enablePushNotificationOrders') == 'true') {
-                $notify = new PushNotify();
-
-                //to user
-                $notify->sendPushNotification('4', $order->user_id, $order->unique_order_id);//ORIGINAL
-
-                /*
-                $restaurantId = $singleOrder->restaurant_id;
-                $singleOrder->delivery_details = $deliveryUser;
-                $notify->pushNotificationToRestaurant($restaurantId, $singleOrder); // NewCreated
-                //$singleOrder->push = $notificationResponse;
-                */
-            }
-            return redirect()->back()->with(array('success' => 'Order Picked'));
-        }else{
-            return redirect()->back()->with(array('message' => 'Something went wrong.'));
-        }
-
-    }
-
-
-
-    /**
-     * @param Request $request
-     */
-    public function deliverOrder(Request $request, TranslationHelper $translationHelper)
-    {
-        $keys = ['deliveryCommissionMessage', 'deliveryTipTransactionMessage'];
-
-        $translationData = $translationHelper->getDefaultLanguageValuesForKeys($keys);
-
-
-        $order = Order::where('id', $request->order_id)->first();
-        $user = $order->user;
-
-        if ($order) {
-            /*
-            $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
-            $commission = 0;
-            if (config('settings.deliveryGuyCommissionFrom') == 'FULLORDER') {
-                $commission = $deliveryGuyCommissionRate / 100 * $order->total;
-            }
-            if (config('settings.deliveryGuyCommissionFrom') == 'DELIVERYCHARGE') {
-                $commission = $deliveryGuyCommissionRate / 100 * $order->delivery_charge;
-            }
-            */
-
-            if (config('settings.enableDeliveryPin') == 'true') {
-                if ($user) {
-                    $order->orderstatus_id = '5'; //Accepted by delivery boy (Deliery Boy Assigned)
-                    $order->rider_deliver_at = Carbon::now()->toDateTimeString();// Produces something like "2019-03-11 12:25:00"
-                    $order->save();
-
-                    $completeDelivery = AcceptDelivery::where('order_id', $order->id)->first();
-                    $completeDelivery->is_complete = true;
-                    $completeDelivery->save();
-
-                    $singleOrder = Order::where('id', $request->order_id)
-                        ->with('restaurant')
-                        ->with('orderitems.order_item_addons')
-                        ->with(array('user' => function ($query) {
-                            $query->select('id', 'name', 'phone');
-                        }))
-                        ->first();
-
-                    if (config('settings.enablePushNotificationOrders') == 'true') {
-                        $notify = new PushNotify();
-                        $notify->sendPushNotification('5', $order->user_id, $order->unique_order_id);
-                    }
-
-                    //Update restautant earnings...
-                    $restaurant_earning = RestaurantEarning::where('restaurant_id', $order->restaurant->id)
-                        ->where('is_requested', 0)
-                        ->first();
-                    if ($restaurant_earning) {
-                        // $restaurant_earning->amount += $order->total - $order->delivery_charge;
-                        $restaurant_earning->amount += $order->total - ($order->delivery_charge + $order->tip_amount);
-                        $restaurant_earning->save();
-                    } else {
-                        $restaurant_earning = new RestaurantEarning();
-                        $restaurant_earning->restaurant_id = $order->restaurant->id;
-                        // $restaurant_earning->amount = $order->total - $order->delivery_charge;
-                        $restaurant_earning->amount = $order->total - ($order->delivery_charge + $order->tip_amount);
-                        $restaurant_earning->save();
-                    }
-
-                    //Update delivery guy collection
-                    if ($order->payment_mode == 'COD') {
-                        $delivery_collection = DeliveryCollection::where('user_id', $completeDelivery->user_id)->first();
-                        if ($delivery_collection) {
-                            $delivery_collection->amount += $order->payable;
-                            $delivery_collection->save();
-                        } else {
-                            $delivery_collection = new DeliveryCollection();
-                            $delivery_collection->user_id = $completeDelivery->user_id;
-                            $delivery_collection->amount = $order->payable;
-                            $delivery_collection->save();
-                        }
-                    }
-
-                    //Update delivery guy's earnings...
-                    if (config('settings.enableDeliveryGuyEarning') == 'true') {
-                        //if enabled, then check based on which value the commision will be calculated
-                        $deliveryUser = AcceptDelivery::where('order_id', $order->id)->first();
-                        if ($deliveryUser->user) {
-                            if (config('settings.deliveryGuyCommissionFrom') == 'FULLORDER') {
-                                //get order total and delivery guy's commission rate and transfer to wallet
-                                // $commission = $deliveryUser->user->delivery_guy_detail->commission_rate / 100 * $order->total;
-                                $commission = $deliveryUser->user->delivery_guy_detail->commission_rate / 100 * ($order->total - $order->tip_amount);
-                                $deliveryUser->user->deposit($commission * 100, ['description' => $translationData->deliveryCommissionMessage . $order->unique_order_id]);
-                            }
-                            if (config('settings.deliveryGuyCommissionFrom') == 'DELIVERYCHARGE') {
-                                //get order delivery charge and delivery guy's commission rate and transfer to wallet
-                                $commission = $deliveryUser->user->delivery_guy_detail->commission_rate / 100 * $order->delivery_charge;
-                                $deliveryUser->user->deposit($commission * 100, ['description' => $translationData->deliveryCommissionMessage . $order->unique_order_id]);
-                            }
-                        }
-                    }
-                    //$singleOrder->commission = number_format((float) $commission, 2, '.', '');
-                    //return response()->json($singleOrder);
-                    return redirect()->back()->with(array('success' => 'Order Delivered Successfully'));
-                } else {
-                    /*
-                    $singleOrder = Order::where('id', $request->order_id)
-                        ->whereIn('orderstatus_id', ['2', '3', '4'])
-                        ->with('restaurant')
-                        ->with('orderitems.order_item_addons')
-                        ->with(array('user' => function ($query) {
-                            $query->select('id', 'name', 'phone');
-                        }))
-                        ->first();
-
-                    $singleOrder->delivery_pin_error = true;
-                    $singleOrder->commission = number_format((float) $commission, 2, '.', '');
-                    // sleep(3);
-                    return response()->json($singleOrder);
-                    */
-                }
-            } else {
-                $order->orderstatus_id = '5'; //Accepted by delivery boy (Deliery Boy Assigned)
-                $order->save();
-
-                $completeDelivery = AcceptDelivery::where('order_id', $order->id)->first();
-                $completeDelivery->is_complete = true;
-                $completeDelivery->save();
-
-                $singleOrder = Order::where('id', $request->order_id)
-                    ->with('restaurant')
-                    ->with('orderitems.order_item_addons')
-                    ->with(array('user' => function ($query) {
-                        $query->select('id', 'name', 'phone');
-                    }))
-                    ->first();
-
-                if (config('settings.enablePushNotificationOrders') == 'true') {
-                    $notify = new PushNotify();
-                    $notify->sendPushNotification('5', $order->user_id, $order->unique_order_id);
-                }
-
-                $restaurant_earning = RestaurantEarning::where('restaurant_id', $order->restaurant->id)
-                    ->where('is_requested', 0)
-                    ->first();
-                if ($restaurant_earning) {
-                    // $restaurant_earning->amount += $order->total - $order->delivery_charge;
-                    $restaurant_earning->amount += $order->total - ($order->delivery_charge + $order->tip_amount);
-                    $restaurant_earning->save();
-                } else {
-                    $restaurant_earning = new RestaurantEarning();
-                    $restaurant_earning->restaurant_id = $order->restaurant->id;
-                    // $restaurant_earning->amount = $order->total - $order->delivery_charge;
-                    $restaurant_earning->amount = $order->total - ($order->delivery_charge + $order->tip_amount);
-                    $restaurant_earning->save();
-                }
-
-                //Update delivery guy collection
-                if ($order->payment_mode == 'COD') {
-                    $delivery_collection = DeliveryCollection::where('user_id', $completeDelivery->user_id)->first();
-                    if ($delivery_collection) {
-                        $delivery_collection->amount += $order->payable;
-                        $delivery_collection->save();
-                    } else {
-                        $delivery_collection = new DeliveryCollection();
-                        $delivery_collection->user_id = $completeDelivery->user_id;
-                        $delivery_collection->amount = $order->payable;
-                        $delivery_collection->save();
-                    }
-                }
-
-                //Update delivery guy's earnings...
-                if (config('settings.enableDeliveryGuyEarning') == 'true') {
-                    //if enabled, then check based on which value the commision will be calculated
-                    $deliveryUser = AcceptDelivery::where('order_id', $order->id)->first();
-                    if ($deliveryUser->user) {
-                        if (config('settings.deliveryGuyCommissionFrom') == 'FULLORDER') {
-                            //get order total and delivery guy's commission rate and transfer to wallet
-                            // $commission = $deliveryUser->user->delivery_guy_detail->commission_rate / 100 * $order->total;
-                            $commission = $deliveryUser->user->delivery_guy_detail->commission_rate / 100 * ($order->total - $order->tip_amount);
-                            $deliveryUser->user->deposit($commission * 100, ['description' => $translationData->deliveryCommissionMessage . $order->unique_order_id]);
-                        }
-                        if (config('settings.deliveryGuyCommissionFrom') == 'DELIVERYCHARGE') {
-                            //get order delivery charge and delivery guy's commission rate and transfer to wallet
-                            $commission = $deliveryUser->user->delivery_guy_detail->commission_rate / 100 * $order->delivery_charge;
-                            $deliveryUser->user->deposit($commission * 100, ['description' => $translationData->deliveryCommissionMessage . $order->unique_order_id]);
-                        }
-                    }
-                }
-                // update tip amount charges
-                if ($deliveryUser->user) {
-                    if ($deliveryUser->user->delivery_guy_detail->tip_commission_rate && !is_null($deliveryUser->user->delivery_guy_detail->tip_commission_rate)) {
-                        $commission = $deliveryUser->user->delivery_guy_detail->tip_commission_rate / 100 * $order->tip_amount;
-                        $deliveryUser->user->deposit($commission * 100, ['description' => $translationData->deliveryTipTransactionMessage . ' : ' . $order->unique_order_id]);
-                    }
-                }
-                //return response()->json($singleOrder);
-                return redirect()->back()->with(array('success' => 'Order Delivered Successfully'));
-            }
-        }
-    }
-
-
-
-    /*##################################################################################*/
-    /*                  CustomControllers[END]                                          */
-    /*##################################################################################*/
 
 
 

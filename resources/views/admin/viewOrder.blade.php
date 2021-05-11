@@ -78,6 +78,10 @@
                                         @if ($order->orderstatus_id == 7) Ready to Pickup @endif
                                         @if ($order->orderstatus_id == 8) Awaiting Payment @endif
                                         @if ($order->orderstatus_id == 9) Payment Failed @endif
+                                        @if ($order->orderstatus_id == 10) DeliveryGuy Reached Pickup Location @endif
+                                        @if ($order->orderstatus_id == 11) DeliveryGuy Reached Drop Location @endif
+                                        @if ($order->orderstatus_id == 73) ORDER_READY_AND_DELIVERY_ASSIGNED @endif
+                                        @if ($order->orderstatus_id == 710) ORDER_READY_AND_DELIVERY_REACHED_TO_PICKUP @endif
                                     </div>
                                 </div>
                             </div>
@@ -270,6 +274,7 @@
                     @endif
                     
                     <div class="form-group d-flex justify-content-center">
+                        <!-- START AcceptOrder[2]-->
                         @if($order->orderstatus_id == 1) 
                         <form action="{{ route('admin.acceptOrderFromAdmin') }}" class="mr-1" method="POST">
                             <input type="hidden" name="id" value="{{ $order->id }}">
@@ -278,8 +283,63 @@
                                 class="btn btn-primary btn-labeled btn-labeled-left mr-1"> <b><i
                                 class="icon-checkmark3 ml-1"></i> </b> Accept Order </button>
                         </form>
-                        @endif  
-                        @if($order->orderstatus_id == 1 || $order->orderstatus_id == 2 || $order->orderstatus_id == 3 || $order->orderstatus_id == 4 || $order->orderstatus_id == 7 || $order->orderstatus_id == 8 || $order->orderstatus_id == 9) 
+                        @endif
+                        <!-- ./END AcceptOrder-->
+
+                        <!-- START MarkReady Order[7/10]-->
+                        @if($order->orderstatus_id == 2 || $order->orderstatus_id == 3 || ($order->orderstatus_id == 10))
+                            <form action="{{ route('admin.readyOrderFromAdmin') }}" class="mr-2" method="POST">
+                                <input type="hidden" name="id" value="{{ $order->id }}">
+                                @csrf
+                                <button class="btn btn-primary btn-labeled btn-labeled-left mr-2"> <b><i class="icon-checkmark3 ml-1"></i> </b> Mark Ready </button>
+                            </form>
+                        @endif
+                       <!-- ./END MarkReady Order-->
+
+                        <br>
+                        <!-- START ReachPickupLocation[10]-->
+                        @if($order->orderstatus_id == 3 || $order->orderstatus_id == 73)
+                            <form action="{{ route('admin.reaachedPickupLocationFromAdmin') }}" class="mr-2" method="POST">
+                                <input type="hidden" name="id" value="{{ $order->id }}">
+                                @csrf
+                                <button class="btn btn-primary btn-labeled btn-labeled-left mr-2"> <b><i class="icon-checkmark3 ml-1"></i> </b> Reached Pickup Location</button>
+                            </form>
+                        @endif
+                       <!-- ./END ReachPickupLocation-->
+
+
+                        <!-- START DeliverOrder[5] -->
+                        @if(($order->delivery_type == 1 && $order->orderstatus_id == 11))
+                            <form action="{{ route('admin.deliverOrder') }}" class="mr-2" method="POST">
+                                <input type="hidden" name="delivery_pin" value="{{ $order->delivery_pin }}">
+                                <input type="hidden" name="order_id" value="{{ $order->id }}">
+                                @csrf
+                                <button type="submit" class="btn btn-primary btn-labeled btn-labeled-left mr-2">
+                                    <b><i class="icon-checkmark3 ml-1"></i> </b> Deliver Order
+                                </button>
+
+                            </form>
+                        @endif
+                    <!-- END AssignDeliveryGuy [3/10]-->
+
+
+
+                        <br>
+                        <!-- START ReachDropLocation[11]-->
+                        @if($order->orderstatus_id == 4)
+                            <form action="{{ route('admin.reaachedDropLocationFromAdmin') }}" class="mr-2" method="POST">
+                                <input type="hidden" name="id" value="{{ $order->id }}">
+                                @csrf
+                                <button class="btn btn-primary btn-labeled btn-labeled-left mr-2"> <b><i class="icon-checkmark3 ml-1"></i> </b> Reached Drop Location</button>
+                            </form>
+                        @endif
+                       <!-- ./END ReachDropLocation-->
+
+
+
+
+                        <!-- START CancelOrder [6]-->
+                        @if($order->orderstatus_id == 1 || $order->orderstatus_id == 2 || $order->orderstatus_id == 3 || $order->orderstatus_id == 4 || $order->orderstatus_id == 7 || $order->orderstatus_id == 8 || $order->orderstatus_id == 9 || $order->orderstatus_id == 10 || $order->orderstatus_id == 11 || $order->orderstatus_id == 73 || $order->orderstatus_id == 710)
                         <a href="javascript:void(0)" class="btn btn-danger btn-labeled dropdown-toggle" data-toggle="dropdown">
                         Cancel Order
                         </a>
@@ -310,14 +370,30 @@
                             </form>
                         </div>
                         @endif
-                        @if($order->orderstatus_id == 8)
+                        <!-- ./END CancelOrder-->
+
+                        <!-- START PickUpOrder[4]-->
+                        @if($order->orderstatus_id == 710 )
+                            <form action="{{ route('admin.pickedupOrderFromAdmin') }}" class="mr-2" method="POST">
+                                <input type="hidden" name="order_id" value="{{ $order->id }}">
+                                @csrf
+                                <button
+                                        class="btn btn-primary btn-labeled btn-labeled-left mr-2"> <b><i
+                                                class="icon-checkmark3 ml-1"></i> </b> Pick Order From Restaurant</button>
+                            </form>
+                        @endif
+                        <!-- ./END PickUpOrder-->
+
+
+                    @if($order->orderstatus_id == 8)
                         <a href="{{ route('admin.approvePaymentOfOrder', $order->id) }}" class="btn btn-secondary ml-2 approvePayment" data-popup="tooltip" data-placement="bottom" title="Double Click to Approve Payment">
                             Approve Payment
                         </a>
                         @endif
                     </div>
+
                     @if($order->delivery_type==1)
-                        @if($order->orderstatus_id ==  1 || $order->orderstatus_id ==  2) 
+                        @if($order->orderstatus_id ==  2 || ($order->orderstatus_id ==  7 && $order->rider_accept_at == null))
                             <label class="control-label no-margin text-semibold mr-1"><strong>Assign Delivery Guy</strong></label>
                             <form action="{{route('admin.assignDeliveryFromAdmin')}}" method="POST">
                                 <input type="text" hidden value="{{$order->id}}" name="order_id">
@@ -346,9 +422,9 @@
                     @endif 
                     
                     @if($order->delivery_type==1)
-                        @if($order->orderstatus_id == 3 || $order->orderstatus_id == 4)
+                        @if($order->orderstatus_id == 3 || $order->orderstatus_id == 4 || $order->orderstatus_id == 73 || $order->orderstatus_id == 710)
                            @if($order->accept_delivery && $order->accept_delivery->user && $order->accept_delivery->user->name)
-                           <p class="text-center mb-3"> <strong>Assigned Delivery Guy: {{ $order->accept_delivery->user->name }}</strong></p>
+                           <p class="text-center mb-3"> <strong>Re-Assigned Delivery Guy: {{ $order->accept_delivery->user->name }}</strong></p>
                            @endif
                             <form action="{{route('admin.reAssignDeliveryFromAdmin')}}" method="POST">
                                 <input type="text" hidden value="{{$order->id}}" name="order_id">
@@ -380,6 +456,112 @@
                     @endif
                 </div>
             </div>
+
+
+
+            <div class="card">
+                <div class="card-body">
+                    <legend class="font-weight-semibold text-uppercase font-size-sm">
+                        <i class="icon-basket mr-2"></i>
+                        <span class="badge badge-primary badge-pill animated flipInX">
+                        @if ($order->delivery_type == 1)
+                                Deliverable Order
+                            @endif
+                            @if ($order->delivery_type == 2)
+                                Self Pickup Order
+                            @endif
+                        </span>
+                    </legend>
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">Status</th>
+                            <th scope="col">Time</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <th scope="row">Order Placed</th>
+                            <td>
+                                @if ($order->created_at !== null)
+                                    {{ date("d/m/y (H:i a)", strtotime($order->created_at))}}
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Order Accepted</th>
+                            <td>
+                                @if ($order->restaurant_accept_at !== null)
+                                    {{ date("d/m/y (H:i a)", strtotime($order->restaurant_accept_at))}}
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Marked Ready</th>
+                            <td>
+                                @if ($order->restaurant_ready_at !== null)
+                                    {{ date("d/m/y (H:i a)", strtotime($order->restaurant_ready_at))}}
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Delivery Assigned</th>
+                            <td>
+                                @if ($order->rider_accept_at !== null)
+                                    {{ date("d/m/y (H:i a)", strtotime($order->rider_accept_at))}}
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">DeliveryGuy Reached PickUpLocation</th>
+                            <td>
+                                @if ($order->rider_reached_pickup_location_at !== null)
+                                    {{ date("d/m/y (H:i a)", strtotime($order->rider_reached_pickup_location_at))}}
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Meal Picked Up</th>
+                            <td>
+                                @if ($order->rider_picked_at !== null)
+                                    {{ date("d/m/y (H:i a)", strtotime($order->rider_picked_at))}}
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">DeliveryGuy Reached DropLocation</th>
+                            <td>
+                                @if ($order->rider_reached_drop_location_at !== null)
+                                    {{ date("d/m/y (H:i a)", strtotime($order->rider_reached_drop_location_at))}}
+                                @endif
+                            </td>
+                        </tr>
+                        @if($order->orderstatus_id !== 6)
+                            <tr>
+                                <th scope="row" style= "color : green">Delivered</th>
+                                <td>
+                                    @if ($order->rider_deliver_at !== null)
+                                        <strong style= "color : green">{{ date("d/m/y (H:i a)", strtotime($order->rider_deliver_at))}}</strong>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endif
+
+                        @if($order->orderstatus_id !== 5)
+                            <tr>
+                                <th scope="row" style= "color : red">Cancelled At</th>
+                                <td>
+                                    @if ($order->orderstatus_id == 6)
+                                        <strong style= "color : red">{{ date("d/m/y (H:i a)", strtotime($order->updated_at))}}</strong>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endif
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
