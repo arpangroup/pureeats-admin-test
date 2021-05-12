@@ -667,7 +667,7 @@ class DeliveryController extends Controller
             $order = Order::where('id', $request->order_id)->first();
 
             if ($order) {
-                if($order->orderstatus_id != '10' || $order->orderstatus_id != '710') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Already reached pickup location");
+                if($order->orderstatus_id == '10' || $order->orderstatus_id == '710') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Already reached pickup location");
 
                 $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
                 $commission = 0;
@@ -728,7 +728,7 @@ class DeliveryController extends Controller
             $order = Order::where('id', $request->order_id)->first();
 
             if ($order) {
-                if($order->orderstatus_id != '4') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Already Pickedup");
+                if($order->orderstatus_id == '4') throw new ValidationException(\ErProrCode::OPERATION_ALREADY_COMPLETED, "Already Pickedup");
 
                 $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
                 $commission = 0;
