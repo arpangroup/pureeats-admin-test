@@ -406,7 +406,8 @@ class DeliveryController extends Controller
         $alreadyAcceptedDeliveries = collect();
         $acceptDeliveries = AcceptDelivery::where('user_id', Auth::user()->id)->where('is_complete', 0)->get();
         foreach ($acceptDeliveries as $ad) {
-            $order = Order::where('id', $ad->order_id)->whereIn('orderstatus_id', ['3'])->with('restaurant')->first();
+            //$order = Order::where('id', $ad->order_id)->whereIn('orderstatus_id', ['3'])->with('restaurant')->first(); /ORIGINAL
+            $order = Order::where('id', $ad->order_id)->whereIn('orderstatus_id', ['3', '10', '73', '710'])->with('restaurant')->first();
 
             if ($order) {
                 $commission = 0;
@@ -425,7 +426,7 @@ class DeliveryController extends Controller
         $pickedupOrders = collect();
         $acceptDeliveries = AcceptDelivery::where('user_id', Auth::user()->id)->where('is_complete', 0)->get();
         foreach ($acceptDeliveries as $ad) {
-            $order = Order::where('id', $ad->order_id)->whereIn('orderstatus_id', ['4'])->with('restaurant')->first();
+            $order = Order::where('id', $ad->order_id)->whereIn('orderstatus_id', ['4', '11'])->with('restaurant')->first();
 
             if ($order) {
                 $commission = 0;
@@ -563,6 +564,7 @@ class DeliveryController extends Controller
             $order = Order::where('id', $request->order_id)->first();
 
             if ($order) {
+                if($order->orderstatus_id != '2' || $order->orderstatus_id != '7') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Order is already accepted");
 
                 $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
                 $commission = 0;
@@ -665,6 +667,7 @@ class DeliveryController extends Controller
             $order = Order::where('id', $request->order_id)->first();
 
             if ($order) {
+                if($order->orderstatus_id != '10' || $order->orderstatus_id != '710') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Already reached pickup location");
 
                 $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
                 $commission = 0;
@@ -675,7 +678,14 @@ class DeliveryController extends Controller
                     $commission = $deliveryGuyCommissionRate / 100 * $order->delivery_charge;
                 }
 
-                $order->extra_status = 'REACHED_PICKUP_LOCATION'; //Reached to restaurant
+                if($order->orderstatus_id == 3){
+                    $order->orderstatus_id = '10';
+                }else if($order->orderstatus_id == '73'){
+                    $order->orderstatus_id = 710;  // As DeliveryGuy not accepted(status_id != 3) the order, but restaurant is marking the order as READY
+                }else{
+                    $order->orderstatus_id = 10;
+                }
+                $order->rider_reached_pickup_location_at = Carbon::now()->toDateTimeString();// Produces something like "2019-03-11 12:25:00"
                 $order->save();
 
 
@@ -718,6 +728,7 @@ class DeliveryController extends Controller
             $order = Order::where('id', $request->order_id)->first();
 
             if ($order) {
+                if($order->orderstatus_id != '4') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Already Pickedup");
 
                 $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
                 $commission = 0;
@@ -765,6 +776,7 @@ class DeliveryController extends Controller
             $order = Order::where('id', $request->order_id)->first();
 
             if ($order) {
+                if($order->orderstatus_id != '11') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Already reached drop location");
 
                 $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
                 $commission = 0;
@@ -775,7 +787,8 @@ class DeliveryController extends Controller
                     $commission = $deliveryGuyCommissionRate / 100 * $order->delivery_charge;
                 }
 
-                $order->extra_status = 'REACHED_DROP_LOCATION'; //Reached to the customer location
+                $order->orderstatus_id = 11;
+                $order->rider_reached_drop_location_at = Carbon::now()->toDateTimeString();// Produces something like "2019-03-11 12:25:00"
                 $order->save();
 
                 $singleOrder = Order::where('id', $request->order_id)
@@ -805,7 +818,7 @@ class DeliveryController extends Controller
         if ($deliveryUser && $deliveryUser->hasRole('Delivery Guy')){
             $order = Order::where('id', $request->order_id)->first();
 
-            if ($order && $order->extra_status == 'REACHED_DROP_LOCATION') {
+            if ($order && $order->orderstatus_id == 11) {
                 if($order->is_order_reached_message_send == 0){
                     // send the order reached message to the customer
                     // This is not a mandatory message, if deliveryGuy seems that customer is unreachable, then he can send message
@@ -848,6 +861,7 @@ class DeliveryController extends Controller
             $user = $order->user;
 
             if ($order) {
+                if($order->orderstatus_id != '5') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Already Delivered");
 
                 $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
                 $commission = 0;
@@ -859,7 +873,7 @@ class DeliveryController extends Controller
                 }
 
                 if (config('settings.enableDeliveryPin') == 'true') {
-                    if ($user->delivery_pin == strtoupper($request->delivery_pin)) {
+                    if ($order->delivery_pin == strtoupper($request->delivery_pin)) {
                         $order->orderstatus_id = '5'; //Accepted by delivery boy (Deliery Boy Assigned)
                         $order->save();
 
