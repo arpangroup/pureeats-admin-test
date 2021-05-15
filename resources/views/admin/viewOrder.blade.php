@@ -62,18 +62,35 @@
                                     @endif
                                 </p>
 
+
                                 <label class="control-label no-margin text-semibold mr-1">
-                                    <strong><h5><u>
-                                                <a href="{{route('admin.get.editUser',  $order->accept_delivery->user->id)}}"
-                                                   target="_blank" class="linked-item">DeliveryGuy Details:
+                                    <strong><h5>DeliveryGuy Details:
                                                     @if($order->orderstatus_id == 3 || $order->orderstatus_id == 10 || $order->orderstatus_id == 73 || $order->orderstatus_id == 710 || $order->orderstatus_id == 4 || $order->orderstatus_id == 11 || $order->orderstatus_id == 5)
                                                         @if($order->accept_delivery && $order->accept_delivery->user && $order->accept_delivery->user->name)
-                                                            {{ $order->accept_delivery->user->name }}
+                                                            <u>
+                                                                <a href="{{route('admin.get.editUser',  $order->accept_delivery->user->id)}}"
+                                                                   target="_blank" class="linked-item">
+                                                                    {{ $order->accept_delivery->user->name }}
+                                                                </a>
+                                                            </u>
                                                         @endif
                                                     @endif
-                                                </a></u></h5>
+                                                </h5>
                                     </strong>
                                 </label>
+
+{{--                                <label class="control-label no-margin text-semibold mr-1">--}}
+{{--                                    <strong><h5><u>--}}
+{{--                                                <a href="{{route('admin.get.editUser',  $order->accept_delivery->user->id)}}"--}}
+{{--                                                   target="_blank" class="linked-item">DeliveryGuy Details:--}}
+{{--                                                    @if($order->orderstatus_id == 3 || $order->orderstatus_id == 10 || $order->orderstatus_id == 73 || $order->orderstatus_id == 710 || $order->orderstatus_id == 4 || $order->orderstatus_id == 11 || $order->orderstatus_id == 5)--}}
+{{--                                                        @if($order->accept_delivery && $order->accept_delivery->user && $order->accept_delivery->user->name)--}}
+{{--                                                            {{ $order->accept_delivery->user->name }}--}}
+{{--                                                        @endif--}}
+{{--                                                    @endif--}}
+{{--                                                </a></u></h5>--}}
+{{--                                    </strong>--}}
+{{--                                </label>--}}
                             </div>
                         </div>
 
