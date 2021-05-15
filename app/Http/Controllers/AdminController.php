@@ -13,6 +13,7 @@ use App\Http\Middleware\SCLCC;
 use App\Http\Middleware\SelfHelpM;
 use App\Item;
 use App\ItemCategory;
+use App\LoginSession;
 use App\Order;
 use App\Orderstatus;
 use App\Page;
@@ -339,17 +340,45 @@ class AdminController extends Controller
         $user = User::where('id', $id)->with('orders')->first();
         $roles = Role::get();
 
-        $sessions = [];
-        if ($user->hasRole('Delivery Guy')) {
-            $sessions = DB::table('login_sessions')->where('user_id', $user->id)->orderBy('id', 'desc')->get();
+
+        $loginSessions = collect();
+        if ($user) {
+            //$sessions = DB::table('login_sessions')->where('user_id', $user->id)->orderBy('id', 'desc')->get();
+            $sessions = LoginSession::where('user_id', $user->id)
+                ->orderBy('id', 'DESC')
+                ->take(9)
+                ->get();
+
+            $THRESHOLD_TIME = 2;
+            if (config('settings.logoutThresholdTime') != null) {
+                $THRESHOLD_TIME = config('settings.logoutThresholdTime');
+            }
+
+            if($sessions != null){
+                foreach ($sessions as $session) {
+                    $from = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::now()->toDateTimeString());
+                    $to = Carbon::createFromFormat('Y-m-d H:i:s', $session->last_checkout_at);
+                    $diffInMinutes = round(abs(strtotime($from) - strtotime($to)) /60, 2); //Output: 20
+
+                    if($diffInMinutes < $THRESHOLD_TIME){
+                        $session['is_online'] = true;
+                    }else{
+                        $session['is_online'] = false;
+                    }
+                    $loginSessions->push($session);
+                }
+            }
+
         }
+//        return $loginSessions;
+
 
         // dd($user->delivery_guy_detail);
         return view('admin.editUser', array(
             'orders' => $user->orders,
             'user' => $user,
             'roles' => $roles,
-            'sessions' => $sessions,
+            'sessions' => $loginSessions,
         ));
     }
 

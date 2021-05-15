@@ -56,10 +56,24 @@
                                 <p><b>Delivery Address: </b> {{ $order->address }}</p>
                                 @endif
 
-                                @if($order->order_comment != NULL)
-                                    <p><b>Comment/Suggestion: </b> {{ $order->order_comment }}</p>
-                                @endif
+                                <p><b>Comment/Suggestion: </b>
+                                    @if($order->order_comment != null){{ $order->order_comment }}
+                                    @else NULL
+                                    @endif
+                                </p>
 
+                                <label class="control-label no-margin text-semibold mr-1">
+                                    <strong><h5><u>
+                                                <a href="{{route('admin.get.editUser', $order->user->id)}}"
+                                                   target="_blank" class="linked-item">DeliveryGuy Details:
+                                                    @if($order->orderstatus_id == 3 || $order->orderstatus_id == 10 || $order->orderstatus_id == 73 || $order->orderstatus_id == 710 || $order->orderstatus_id == 4 || $order->orderstatus_id == 11 || $order->orderstatus_id == 5)
+                                                        @if($order->accept_delivery && $order->accept_delivery->user && $order->accept_delivery->user->name)
+                                                            {{ $order->accept_delivery->user->name }}
+                                                        @endif
+                                                    @endif
+                                                </a></u></h5>
+                                    </strong>
+                                </label>
                             </div>
                         </div>
 
@@ -246,7 +260,40 @@
 
                         <div class="clearfix"></div>
                     </div>
+
+                    <!-- New By Arpan -->
+                    <br>
+                    <br>
+                    <div class="row">
+                        <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <h3><strong>Order Snapshot</strong></h3>
+                                <a href="{{url("/images/bill")}}{{ "/".$order->bill_photo }}" target="_blank" style="display: inline-block;">
+                                    <img src="{{url("/images/bill")}}{{ "/".$order->bill_photo }}"
+                                         alt="{{ $order->$order }}" height="100%" width="100%"
+                                         style="border-radius: 0.275rem;">
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <h3><strong>Bill Photo</strong></h3>
+                                <a href="{{url("/images/bill")}}{{ "/".$order->bill_photo }}" target="_blank" style="display: inline-block;">
+                                    <img src="{{url("/images/bill")}}{{ "/".$order->bill_photo }}"
+                                         alt="{{ $order->$order }}" height="100%" width="100%"
+                                         style="border-radius: 0.275rem;">
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ./ END -->
                 </div>
+
+
+
+
+
+
             </div>
         </div>
         <div class="col-md-4 mb-5">

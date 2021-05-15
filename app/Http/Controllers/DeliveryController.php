@@ -740,6 +740,18 @@ class DeliveryController extends Controller
                 }
 
                 $order->orderstatus_id = '4'; //Accepted by delivery boy (Deliery Boy Assigned)
+                if($request->bill_photo != null) {
+                    $billPhotoBase64String = $request->bill_photo;
+
+                    $imageData = base64_decode($billPhotoBase64String);
+                    $source = imagecreatefromstring($imageData);
+                    $rotate = imagerotate($source, 0, 0); // if want to rotate the image
+                    $filename = $order->unique_order_id .'_'. time().'.jpg';
+                    $file = public_path('/images/bill/' . $filename);
+                    $imageSave = imagejpeg($rotate, $file, 100);
+                    imagedestroy($source);
+                    $order->bill_photo = $filename;
+                }
                 $order->save();
 
                 $singleOrder = Order::where('id', $request->order_id)
@@ -1048,7 +1060,7 @@ class DeliveryController extends Controller
     /*############################# 02-May-2021[START] #####################################*/
 
     public function dashboard(Request $request){
-        $user = \http\Client\Curl\User::where('id', $request->user_id)->first();
+        $user = User::where('id', $request->user_id)->first();
         if ($user) {
             //$earnings = $user->transactions()->orderBy('id', 'DESC')->get();
 
@@ -1161,6 +1173,11 @@ class DeliveryController extends Controller
         $current_date_time = Carbon::now()->toDateTimeString();// Produces something like "2019-03-11 12:25:00"
         $current_timestamp = Carbon::now()->timestamp; // Produces something like 1552296328
 
+        $THRESHOLD_TIME = 2;
+        if (config('settings.logoutThresholdTime') != null) {
+            $THRESHOLD_TIME = config('settings.logoutThresholdTime');
+        }
+
         $loginSession = null;
         $existingLoginSession = LoginSession::where('user_id', $user->id)
             //->whereNull('last_checkout_at')
@@ -1175,7 +1192,7 @@ class DeliveryController extends Controller
             $diffInMinutes = round(abs(strtotime($from) - strtotime($to)) /60, 2); //Output: 20
             //return response()->json(["diff_in_minutes"=>$diffInMinutes]);
 
-            $THRESHOLD_TIME = 2;
+
             if($diffInMinutes < $THRESHOLD_TIME){
                 $loginSession = $existingLoginSession;
             }else{

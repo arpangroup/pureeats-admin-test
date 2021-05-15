@@ -2966,6 +2966,21 @@
                         </div>
                     </div>
                 </div>
+
+
+
+                <div class="form-group row">
+                    <label class="col-lg-3 col-form-label"><strong>Auto Logout Threshold Time<span class="badge badge-flat border-grey-800 text-danger text-capitalize mx-1">NEW</span>
+                            <i class="icon-question3 ml-1" data-popup="tooltip" title="If you not use the distance matrix API to calculate the delivery time, you need some approximation to calculate the time based on the geographical distance" data-placement="top"></i>
+                        </strong></label>
+                    <div class="col-lg-9">
+                        <input type="number" class="form-control form-control-lg" name="logoutThresholdTime"
+                               value="{{ config('settings.logoutThresholdTime') }}"
+                               placeholder="Auto Logout time in minute">
+                    </div>
+                </div>
+
+
                 <p><strong class="text-danger">Important Note: </strong> You will need to logout of the delivery application and login again to get the updated congigs/settings.</p>
             </div>
             <div class="tab-pane fade" id="restaurantDashboardSettings">

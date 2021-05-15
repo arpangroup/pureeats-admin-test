@@ -2,36 +2,6 @@
 @section("title") Edit User - Dashboard
 @endsection
 
-@section('scripts')
-    @if(isset($sessions))
-        @if($user->hasRole('Delivery Guy') && sizeof($sessions) > 0)
-            <script
-                    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCt_14My2CYghVw6eZFSYFlFPBOK29lkww&callback=initMap&libraries=&v=weekly"
-                    defer
-            ></script>
-
-            <script>
-                // Initialize and add the map
-                function initMap() {
-                    // The location of Uluru
-                    const uluru = { lat: {{json_decode(json_decode($sessions[0]->location))->lat}}, lng: {{json_decode(json_decode($sessions[0]->location))->lng}} };
-                    // The map, centered at Uluru
-                    const map = new google.maps.Map(document.getElementById("map"), {
-                        zoom: 13,
-                        center: uluru,
-                    });
-                    // The marker, positioned at Uluru
-                    const marker = new google.maps.Marker({
-                        position: uluru,
-                        map: map,
-                    });
-                }
-            </script>
-        @endif
-    @endif
-@endsection
-
-
 @section('content')
 <style>
     #showPassword {
@@ -303,8 +273,8 @@
                         <table class="table table-striped">
                             <thead>
                             <tr>
-                                <th scope="col">Login Time</th>
-                                <th scope="col">Logout Time</th>
+                                <th scope="col">LoginTime</th>
+                                <th scope="col">LastSeen</th>
                                 <th scope="col">Status</th>
                             </tr>
                             </thead>
@@ -317,16 +287,18 @@
                             @foreach($sessions as $session)
                                 <tr>
                                     <td>
-                                        {{ date("d/m/y (H:i a)", strtotime($session->login_at))}}
+{{--                                        {{ date("d-m-y-(H:i a)", strtotime($session->login_at))}}--}}
+{{--                                        {{ $session->created_at->format('d-m-y  - h:i A')}}--}}
+                                        {{ $session->created_at->format('d-M  - h:i A')}}
                                     </td>
                                     <td>
-                                        @if($session->logout_at==NULL)
-                                            N/A
+                                        @if($session->last_checkout_at==NULL)
+                                            Logout
                                         @else
-                                            {{ date("d/m/y (H:i a)", strtotime($session->logout_at))}}
+                                            {{ date("d-M  - h:i A", strtotime($session->last_checkout_at))}}
                                         @endif
                                     </td>
-                                    <th class="{{($session->logout_at==NULL)?'text-success':'text-danger'}}" scope="row">{{($session->logout_at==NULL)?'Online':'Offline'}}</th>
+                                    <th class="{{($session->is_online)?'text-success':'text-danger'}}" >{{($session->is_online)?'Online':'Offline'}}</th>
                                 </tr>
                             @endforeach
                             </tbody>
@@ -339,8 +311,9 @@
                 <div class="card">
                     <div class="card-body">
                         <h4>Live Location</h4>
-                        <br />
-                        <div style="height: 370px;" id="map"></div>
+                        <input type="hidden" id="currentLat"/>
+                        <input type="hidden" id="currentLng"/>
+                        <div style="height: 370px;" id="locationMap"></div>
                     </div>
                 </div>
             @endif
@@ -523,4 +496,53 @@
         $('.max_orders').numeric({ allowThouSep:false, maxDecimalPlaces: 0, max: 99999, allowMinus: false });
     });
 </script>
+
+<script>
+    const currentLat = @json(json_encode($sessions[0]->location['lat']) ?? NULL);
+    const currentLng = @json(json_encode($sessions[0]->location['lng']) ?? NULL);
+    document.getElementById("currentLat").value = currentLat;
+    document.getElementById("currentLng").value = currentLng;
+    const deliveryGuyLoc = {lat: parseFloat(currentLat), lng: parseFloat(currentLng) };
+    const locBelurMath = {lat: 22.6322, lng: 88.3559 };
+
+    // const currentLocation = locBelurMath;// for default testing
+    const currentLocation = deliveryGuyLoc;
+
+    var map;
+
+
+    function initMapNew() {
+        const options = {
+            zoom: 13,
+            // center: {lat: -34.397, lng: 150.644 }
+            center: currentLocation
+        };
+
+        map = new google.maps.Map(document.getElementById("locationMap"), options);
+        addMarker({coords:currentLocation});
+        addMarker({coords:currentLocation});
+        addMarker({coords:currentLocation});
+    }
+
+    function addMarker(props){
+        const marker = new google.maps.Marker({
+            position: props.coords,
+            map: map,
+            //icon: 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png'
+            icon: 'http://192.168.0.102:8000/assets/img/delivery_guy.png'
+        });
+
+        const infoWindow = new google.maps.InfoWindow({
+            content: '<h1>Delivery Guy</h1>'
+        });
+
+        marker.addListener('click', function(){
+            infoWindow.open(map, marker);
+        });
+
+    }
+</script>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCt_14My2CYghVw6eZFSYFlFPBOK29lkww&callback=initMapNew"></script>
+
 @endsection
