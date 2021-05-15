@@ -311,8 +311,10 @@
                 <div class="card">
                     <div class="card-body">
                         <h4>Live Location</h4>
+                        <br>
                         <input type="hidden" id="currentLat"/>
                         <input type="hidden" id="currentLng"/>
+                        <br />
                         <div style="height: 370px;" id="locationMap"></div>
                     </div>
                 </div>
@@ -446,6 +448,58 @@
     </div>
 </div>
 
+
+<script>
+    @if($user->hasRole('Delivery Guy') && sizeof($sessions) > 0)
+    const currentLat = @json(json_encode($sessions[0]->location['lat']) ?? NULL);
+    const currentLng = @json(json_encode($sessions[0]->location['lng']) ?? NULL);
+    document.getElementById("currentLat").value = currentLat;
+    document.getElementById("currentLng").value = currentLng;
+    const deliveryGuyLoc = {lat: parseFloat(currentLat), lng: parseFloat(currentLng) };
+    const locBelurMath = {lat: 22.6322, lng: 88.3559 };
+
+    // const currentLocation = locBelurMath;// for default testing
+    const currentLocation = deliveryGuyLoc;
+
+    var map;
+
+
+    function initMapNew() {
+        const options = {
+            zoom: 13,
+            // center: {lat: -34.397, lng: 150.644 }
+            center: currentLocation
+        };
+
+        map = new google.maps.Map(document.getElementById("locationMap"), options);
+        addMarker({coords:currentLocation});
+        addMarker({coords:currentLocation});
+        addMarker({coords:currentLocation});
+    }
+
+    function addMarker(props){
+        const marker = new google.maps.Marker({
+            position: props.coords,
+            map: map,
+            //icon: 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png'
+            icon: 'http://192.168.0.102:8000/assets/img/delivery_guy.png'
+        });
+
+        const infoWindow = new google.maps.InfoWindow({
+            content: '<h1>Delivery Guy</h1>'
+        });
+
+        marker.addListener('click', function(){
+            infoWindow.open(map, marker);
+        });
+
+    }
+    @endif
+</script>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCt_14My2CYghVw6eZFSYFlFPBOK29lkww&callback=initMapNew"></script>
+
+
 <script>
     $(function () {
 
@@ -496,53 +550,5 @@
         $('.max_orders').numeric({ allowThouSep:false, maxDecimalPlaces: 0, max: 99999, allowMinus: false });
     });
 </script>
-
-<script>
-    const currentLat = @json(json_encode($sessions[0]->location['lat']) ?? NULL);
-    const currentLng = @json(json_encode($sessions[0]->location['lng']) ?? NULL);
-    document.getElementById("currentLat").value = currentLat;
-    document.getElementById("currentLng").value = currentLng;
-    const deliveryGuyLoc = {lat: parseFloat(currentLat), lng: parseFloat(currentLng) };
-    const locBelurMath = {lat: 22.6322, lng: 88.3559 };
-
-    // const currentLocation = locBelurMath;// for default testing
-    const currentLocation = deliveryGuyLoc;
-
-    var map;
-
-
-    function initMapNew() {
-        const options = {
-            zoom: 13,
-            // center: {lat: -34.397, lng: 150.644 }
-            center: currentLocation
-        };
-
-        map = new google.maps.Map(document.getElementById("locationMap"), options);
-        addMarker({coords:currentLocation});
-        addMarker({coords:currentLocation});
-        addMarker({coords:currentLocation});
-    }
-
-    function addMarker(props){
-        const marker = new google.maps.Marker({
-            position: props.coords,
-            map: map,
-            //icon: 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png'
-            icon: 'http://192.168.0.102:8000/assets/img/delivery_guy.png'
-        });
-
-        const infoWindow = new google.maps.InfoWindow({
-            content: '<h1>Delivery Guy</h1>'
-        });
-
-        marker.addListener('click', function(){
-            infoWindow.open(map, marker);
-        });
-
-    }
-</script>
-
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCt_14My2CYghVw6eZFSYFlFPBOK29lkww&callback=initMapNew"></script>
 
 @endsection
