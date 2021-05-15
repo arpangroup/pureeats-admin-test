@@ -596,6 +596,7 @@ class DeliveryController extends Controller
 
                         try {
                             $order->orderstatus_id = '3'; //Accepted by delivery boy (Deliery Boy Assigned)
+                            $order->rider_accept_at = Carbon::now()->toDateTimeString();
                             $order->save();
 
                             $acceptDelivery = new AcceptDelivery();
@@ -753,6 +754,7 @@ class DeliveryController extends Controller
                     imagedestroy($source);
                     $order->bill_photo = $filename;
                 }
+                $order->rider_picked_at = Carbon::now()->toDateTimeString();
                 $order->save();
 
                 $singleOrder = Order::where('id', $request->order_id)
