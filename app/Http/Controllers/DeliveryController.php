@@ -876,7 +876,7 @@ class DeliveryController extends Controller
             $user = $order->user;
 
             if ($order) {
-                if($order->orderstatus_id != '5') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Already Delivered");
+                if($order->orderstatus_id != '11') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Already Delivered");
 
                 $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
                 $commission = 0;
