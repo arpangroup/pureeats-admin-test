@@ -482,7 +482,7 @@
             position: props.coords,
             map: map,
             //icon: 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png'
-            icon: 'http://192.168.0.102:8000/assets/img/delivery_guy.png'
+            icon: 'https://admin.pureeatstest.xyz/assets/img/delivery_guy.png'
         });
 
         const infoWindow = new google.maps.InfoWindow({
