@@ -564,7 +564,8 @@ class DeliveryController extends Controller
             $order = Order::where('id', $request->order_id)->first();
 
             if ($order) {
-                if($order->orderstatus_id != '2' || $order->orderstatus_id != '7') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Order is already accepted");
+                //if($order->orderstatus_id != '2' || $order->orderstatus_id != '7') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Order is already accepted");
+                if($order->accept_delivery != null) throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Order is already accepted");
 
                 $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
                 $commission = 0;
