@@ -789,7 +789,7 @@ class DeliveryController extends Controller
             $order = Order::where('id', $request->order_id)->first();
 
             if ($order) {
-                if($order->orderstatus_id != '11') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Already reached drop location");
+                if($order->orderstatus_id != '4') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Already reached drop location");
 
                 $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
                 $commission = 0;
