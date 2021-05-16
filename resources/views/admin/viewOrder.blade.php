@@ -62,6 +62,11 @@
                                     @endif
                                 </p>
 
+                                <p><b>Delivery PIN: </b>
+                                    @if($order->delivery_pin != null){{ $order->delivery_pin }}
+                                    @else NULL
+                                    @endif
+                                </p>
 
                                 <label class="control-label no-margin text-semibold mr-1">
                                     <strong><h5>DeliveryGuy Details:
@@ -78,6 +83,15 @@
                                                 </h5>
                                     </strong>
                                 </label>
+
+
+
+                                <p><b>Delivery Time: </b>
+                                    {{ $order->restaurant->delivery_time }} min
+                                </p>
+                                <p><b>Prepare Time: </b>
+                                    {{ $order->prepare_time }} min
+                                </p>
 
 {{--                                <label class="control-label no-margin text-semibold mr-1">--}}
 {{--                                    <strong><h5><u>--}}
@@ -282,24 +296,23 @@
                     <br>
                     <br>
                     <div class="row">
-                        <div class="col-md-6 col-sm-12">
+                        <div class="col-md-12 col-sm-12 d-flex justify-content-center">
                             <div class="form-group">
-                                <h3><strong>Order Snapshot</strong></h3>
-                                <a href="{{url("/images/bill")}}{{ "/".$order->bill_photo }}" target="_blank" style="display: inline-block;">
-                                    <img src="{{url("/images/bill")}}{{ "/".$order->bill_photo }}"
-                                         alt="{{ $order->$order }}" height="100%" width="100%"
-                                         style="border-radius: 0.275rem;">
-                                </a>
+                                <h3><strong>Order Snapshots</strong></h3>
                             </div>
                         </div>
-                        <div class="col-md-6 col-sm-12">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 d-flex justify-content-center">
                             <div class="form-group">
-                                <h3><strong>Bill Photo</strong></h3>
-                                <a href="{{url("/images/bill")}}{{ "/".$order->bill_photo }}" target="_blank" style="display: inline-block;">
-                                    <img src="{{url("/images/bill")}}{{ "/".$order->bill_photo }}"
-                                         alt="{{ $order->$order }}" height="100%" width="100%"
-                                         style="border-radius: 0.275rem;">
-                                </a>
+                                <h3><strong>Bill Photos</strong></h3>
+                                @foreach (json_decode($order->bill_photos, true) as $billPhoto)
+                                    <a href="{{url("/images/bill")}}{{ "/".$billPhoto }}" target="_blank" style="display: inline-block;">
+                                        <img src="{{url("/images/bill")}}{{ "/".$billPhoto }}"
+                                             alt="{{ $order->$order }}" height="100%" width="100%"
+                                             style="border-radius: 0.275rem;">
+                                    </a>
+                                @endforeach
                             </div>
                         </div>
                     </div>

@@ -442,10 +442,28 @@ class DeliveryController extends Controller
             }
         }
 
+        $cancelledOrders = collect();
+        $transferredOrders = collect();
+        if(isset($request->processing_orders)){
+            $orderIds = $request->processing_orders;
+            $processingOrders = Order::whereIn('id', $orderIds)->get();
+
+            foreach ($processingOrders as $pd){
+                if($pd->orderstatus_id == '6'){ // Order is CANCELLED by the user
+                    $cancelledOrders->push($pd);
+                }else if($pd->accept_delivery != null){ // Order is accepted by some other delivery guy
+                    $transferredOrders->push($pd);
+                }
+            }
+        }
+
+
         $response = [
             'new_orders' => $deliveryGuyNewOrders,
             'accepted_orders' => $alreadyAcceptedDeliveries,
             'pickedup_orders' => $pickedupOrders,
+            'cancelled_orders' => $cancelledOrders,
+            'transferred_orders' => $transferredOrders,
         ];
 
         return response()->json($response);
@@ -742,17 +760,21 @@ class DeliveryController extends Controller
                 }
 
                 $order->orderstatus_id = '4'; //Accepted by delivery boy (Deliery Boy Assigned)
-                if($request->bill_photo != null) {
-                    $billPhotoBase64String = $request->bill_photo;
+                if($request->bill_photos != null) {
+                    $files = collect();
+                    foreach($request->bill_photos as $billPhoto){
+                        $billPhotoBase64String = $billPhoto;
 
-                    $imageData = base64_decode($billPhotoBase64String);
-                    $source = imagecreatefromstring($imageData);
-                    $rotate = imagerotate($source, 0, 0); // if want to rotate the image
-                    $filename = $order->unique_order_id .'_'. time().'.jpg';
-                    $file = public_path('/images/bill/' . $filename);
-                    $imageSave = imagejpeg($rotate, $file, 100);
-                    imagedestroy($source);
-                    $order->bill_photo = $filename;
+                        $imageData = base64_decode($billPhotoBase64String);
+                        $source = imagecreatefromstring($imageData);
+                        $rotate = imagerotate($source, 0, 0); // if want to rotate the image
+                        $filename = $order->unique_order_id .'_'. time().'_'.  str_random(10). '.jpg';
+                        $file = public_path('/images/bill/' . $filename);
+                        $imageSave = imagejpeg($rotate, $file, 100);
+                        imagedestroy($source);
+                        $files->push($filename);
+                    }
+                    $order->bill_photos = json_encode($files);
                 }
                 $order->rider_picked_at = Carbon::now()->toDateTimeString();
                 $order->save();

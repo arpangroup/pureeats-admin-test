@@ -2293,7 +2293,7 @@ class AdminController extends Controller
             $order->orderstatus_id = 2;
             //$order->delivery_pin = strtoupper(str_random(5));
             $order->delivery_pin = mt_rand(10000,99999);
-            $order->prepare_time = 20;
+            $order->prepare_time = 0;
             $order->restaurant_accept_at = Carbon::now()->toDateTimeString();//"2019-03-11 12:25:00"
             $order->save();
             // Send SMS Notification to Delivery Guy
