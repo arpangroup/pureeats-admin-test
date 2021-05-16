@@ -306,13 +306,16 @@
                         <div class="col-md-12 col-sm-12 d-flex justify-content-center">
                             <div class="form-group">
                                 <h3><strong>Bill Photos</strong></h3>
-                                @foreach (json_decode($order->bill_photos, true) as $billPhoto)
-                                    <a href="{{url("/images/bill")}}{{ "/".$billPhoto }}" target="_blank" style="display: inline-block;">
-                                        <img src="{{url("/images/bill")}}{{ "/".$billPhoto }}"
-                                             alt="{{ $order->$order }}" height="100%" width="100%"
-                                             style="border-radius: 0.275rem;">
-                                    </a>
-                                @endforeach
+                                @if($order->bill_photos != null)
+                                    @foreach (json_decode($order->bill_photos, true) as $billPhoto)
+                                        <a href="{{url("/images/bill")}}{{ "/".$billPhoto }}" target="_blank" style="display: inline-block;">
+                                            <img src="{{url("/images/bill")}}{{ "/".$billPhoto }}"
+                                                 alt="{{ $order->$order }}" height="100%" width="100%"
+                                                 style="border-radius: 0.275rem;">
+                                        </a>
+                                    @endforeach
+                                @endif
+
                             </div>
                         </div>
                     </div>
