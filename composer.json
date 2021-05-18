@@ -79,7 +79,8 @@
         },
         "files": [
             "app/Http/helpers.php",
-            "app/Http/ErrorCode.php"
+            "app/Http/ErrorCode.php",
+            "app/Http/NotificationType.php"
         ],
         "classmap": [
             "database/seeds",

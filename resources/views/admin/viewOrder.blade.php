@@ -564,7 +564,7 @@
                             <th scope="row">Order Placed</th>
                             <td>
                                 @if ($order->created_at !== null)
-                                    {{ date("d/m/y (H:i a)", strtotime($order->created_at))}}
+                                    {{ date("d-M h:i a", strtotime($order->created_at))}}
                                 @endif
                             </td>
                         </tr>
@@ -572,7 +572,7 @@
                             <th scope="row">Order Accepted</th>
                             <td>
                                 @if ($order->restaurant_accept_at !== null)
-                                    {{ date("d/m/y (H:i a)", strtotime($order->restaurant_accept_at))}}
+                                    {{ date("h:i a", strtotime($order->restaurant_accept_at))}}
                                 @endif
                             </td>
                         </tr>
@@ -580,7 +580,7 @@
                             <th scope="row">Marked Ready</th>
                             <td>
                                 @if ($order->restaurant_ready_at !== null)
-                                    {{ date("d/m/y (H:i a)", strtotime($order->restaurant_ready_at))}}
+                                    {{ date("h:i a", strtotime($order->restaurant_ready_at))}}
                                 @endif
                             </td>
                         </tr>
@@ -588,7 +588,7 @@
                             <th scope="row">Delivery Assigned</th>
                             <td>
                                 @if ($order->rider_accept_at !== null)
-                                    {{ date("d/m/y (H:i a)", strtotime($order->rider_accept_at))}}
+                                    {{ date("h:i a", strtotime($order->rider_accept_at))}}
                                 @endif
                             </td>
                         </tr>
@@ -596,7 +596,7 @@
                             <th scope="row">DeliveryGuy Reached PickUpLocation</th>
                             <td>
                                 @if ($order->rider_reached_pickup_location_at !== null)
-                                    {{ date("d/m/y (H:i a)", strtotime($order->rider_reached_pickup_location_at))}}
+                                    {{ date("h:i a", strtotime($order->rider_reached_pickup_location_at))}}
                                 @endif
                             </td>
                         </tr>
@@ -604,7 +604,7 @@
                             <th scope="row">Meal Picked Up</th>
                             <td>
                                 @if ($order->rider_picked_at !== null)
-                                    {{ date("d/m/y (H:i a)", strtotime($order->rider_picked_at))}}
+                                    {{ date("h:i a", strtotime($order->rider_picked_at))}}
                                 @endif
                             </td>
                         </tr>
@@ -612,7 +612,7 @@
                             <th scope="row">DeliveryGuy Reached DropLocation</th>
                             <td>
                                 @if ($order->rider_reached_drop_location_at !== null)
-                                    {{ date("d/m/y (H:i a)", strtotime($order->rider_reached_drop_location_at))}}
+                                    {{ date("h:i a", strtotime($order->rider_reached_drop_location_at))}}
                                 @endif
                             </td>
                         </tr>
@@ -621,7 +621,7 @@
                                 <th scope="row" style= "color : green">Delivered</th>
                                 <td>
                                     @if ($order->rider_deliver_at !== null)
-                                        <strong style= "color : green">{{ date("d/m/y (H:i a)", strtotime($order->rider_deliver_at))}}</strong>
+                                        <strong style= "color : green">{{ date("h:i a", strtotime($order->rider_deliver_at))}}</strong>
                                     @endif
                                 </td>
                             </tr>

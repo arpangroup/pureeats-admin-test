@@ -8,6 +8,7 @@ use App\PushToken;
 use App\Translation;
 use Carbon\Carbon;
 use Ixudra\Curl\Facades\Curl;
+use NotificationType;
 
 class PushNotify
 {
@@ -57,67 +58,75 @@ class PushNotify
             $deliveryGuyNewOrderNotificationMsgSub = config('settings.deliveryGuyNewOrderNotificationMsgSub');
         }
 
-        $secretKey = 'key=' . config('settings.firebaseSecret');
+        if ($orderstatus_id == '2') {
+            $msgTitle = $runningOrderPreparingTitle;
+            $msgMessage = $runningOrderPreparingSub;
+            $click_action = config('settings.storeUrl') . '/running-order/' . $unique_order_id;
+        }
+        if ($orderstatus_id == '3') {
+            $msgTitle = $runningOrderDeliveryAssignedTitle;
+            $msgMessage = $runningOrderDeliveryAssignedSub;
+            $click_action = config('settings.storeUrl') . '/running-order/' . $unique_order_id;
+        }
+        if ($orderstatus_id == '4') {
+            $msgTitle = $runningOrderOnwayTitle;
+            $msgMessage = $runningOrderOnwaySub;
+            $click_action = config('settings.storeUrl') . '/running-order/' . $unique_order_id;
+        }
+        if ($orderstatus_id == '5') {
+            $msgTitle = $runningOrderDelivered;
+            $msgMessage = $runningOrderDeliveredSub;
+            $click_action = config('settings.storeUrl') . '/my-orders/';
+        }
+        if ($orderstatus_id == '6') {
+            $msgTitle = $runningOrderCanceledTitle;
+            $msgMessage = $runningOrderCanceledSub;
+            $click_action = config('settings.storeUrl') . '/my-orders/';
+        }
+        if ($orderstatus_id == '7') {
+            $msgTitle = $runningOrderReadyForPickup;
+            $msgMessage = $runningOrderReadyForPickupSub;
+            $click_action = config('settings.storeUrl') . '/running-order/' . $unique_order_id;
+        }
+        if ($orderstatus_id == 'TO_RESTAURANT') {
+            //$msgTitle = $restaurantNewOrderNotificationMsg;
+            //$msgMessage = $restaurantNewOrderNotificationMsgSub;
+            //$click_action = config('settings.storeUrl') . '/public/restaurant-owner/dashboard';
+        }
+        if ($orderstatus_id == 'TO_DELIVERY') {
+            $msgTitle = $deliveryGuyNewOrderNotificationMsg;
+            $msgMessage = $deliveryGuyNewOrderNotificationMsgSub;
+            $click_action = config('settings.storeUrl') . '/delivery/orders/' . $unique_order_id;
+        }
+        if ($orderstatus_id == 'TRANSFERRED_ORDER') {
+            $msgTitle = $deliveryGuyNewOrderNotificationMsg;
+            $msgMessage = $deliveryGuyNewOrderNotificationMsgSub;
+            $click_action = config('settings.storeUrl') . '/delivery/orders/' . $unique_order_id;
+        }
+        $msg = array(
+            'title' => $msgTitle,
+            'message' => $msgMessage,
+            'badge' => '/assets/img/favicons/favicon-96x96.png',
+            'icon' => '/assets/img/favicons/favicon-512x512.png',
+            'click_action' => $click_action,
+            'unique_order_id' => $unique_order_id,
+            'order_status_id' =>$orderstatus_id,
+        );
 
+        $alert = new Alert();
+        $alert->data = json_encode($msg);
+        $alert->user_id = $user_id;
+        $alert->is_read = 0;
+        $alert->save();
+
+        $this->sendNotification($user_id, $msg);
+    }
+
+    public function sendNotification($user_id, $msg){
+        $secretKey = 'key=' . config('settings.firebaseSecret');
         $token = PushToken::where('user_id', $user_id)->first();
 
         if ($token) {
-            if ($orderstatus_id == '2') {
-                $msgTitle = $runningOrderPreparingTitle;
-                $msgMessage = $runningOrderPreparingSub;
-                $click_action = config('settings.storeUrl') . '/running-order/' . $unique_order_id;
-            }
-            if ($orderstatus_id == '3') {
-                $msgTitle = $runningOrderDeliveryAssignedTitle;
-                $msgMessage = $runningOrderDeliveryAssignedSub;
-                $click_action = config('settings.storeUrl') . '/running-order/' . $unique_order_id;
-            }
-            if ($orderstatus_id == '4') {
-                $msgTitle = $runningOrderOnwayTitle;
-                $msgMessage = $runningOrderOnwaySub;
-                $click_action = config('settings.storeUrl') . '/running-order/' . $unique_order_id;
-            }
-            if ($orderstatus_id == '5') {
-                $msgTitle = $runningOrderDelivered;
-                $msgMessage = $runningOrderDeliveredSub;
-                $click_action = config('settings.storeUrl') . '/my-orders/';
-            }
-            if ($orderstatus_id == '6') {
-                $msgTitle = $runningOrderCanceledTitle;
-                $msgMessage = $runningOrderCanceledSub;
-                $click_action = config('settings.storeUrl') . '/my-orders/';
-            }
-            if ($orderstatus_id == '7') {
-                $msgTitle = $runningOrderReadyForPickup;
-                $msgMessage = $runningOrderReadyForPickupSub;
-                $click_action = config('settings.storeUrl') . '/running-order/' . $unique_order_id;
-            }
-            if ($orderstatus_id == 'TO_RESTAURANT') {
-                $msgTitle = $restaurantNewOrderNotificationMsg;
-                $msgMessage = $restaurantNewOrderNotificationMsgSub;
-                $click_action = config('settings.storeUrl') . '/public/restaurant-owner/dashboard';
-            }
-            if ($orderstatus_id == 'TO_DELIVERY') {
-                $msgTitle = $deliveryGuyNewOrderNotificationMsg;
-                $msgMessage = $deliveryGuyNewOrderNotificationMsgSub;
-                $click_action = config('settings.storeUrl') . '/delivery/orders/' . $unique_order_id;
-            }
-            $msg = array(
-                'title' => $msgTitle,
-                'message' => $msgMessage,
-                'badge' => '/assets/img/favicons/favicon-96x96.png',
-                'icon' => '/assets/img/favicons/favicon-512x512.png',
-                'click_action' => $click_action,
-                'unique_order_id' => $unique_order_id,
-                'order_status_id' =>$orderstatus_id,
-            );
-
-            $alert = new Alert();
-            $alert->data = json_encode($msg);
-            $alert->user_id = $user_id;
-            $alert->is_read = 0;
-            $alert->save();
-
             $fullData = array(
                 'to' => $token->token,
                 'data' => $msg,
@@ -130,6 +139,9 @@ class PushNotify
                 ->post();
         }
     }
+
+
+
 
     /**
      * @param $user_id
@@ -155,6 +167,115 @@ class PushNotify
         $alert->is_read = 0;
         $alert->save();
 
+    }
+
+
+    /**
+     * @param $orderId
+     * Send the Order arrived notification to all the delivery guy, when sore accepted the order
+     */
+    public function sendPushNotificationToDeliveryGuy($notificationType, $orderstatus_id, $order_id, $unique_order_id, $restaurant_id, $deliveryguy_id = null){
+        $msg = array(
+            'title' => '',
+            'message' =>'',
+            'order_id' => $order_id,
+            'unique_order_id' => $unique_order_id,
+            'order_status_id' =>$orderstatus_id,
+            'notification_type' => $notificationType,
+        );
+
+        if($notificationType){
+            switch ($notificationType) {
+                case NotificationType::ORDER_ARRIVED: // Trigger when Store accepted the order
+                    $msg['title'] = 'New Order Arrived';
+                    $msg['message'] = 'Please accept the order ' . $unique_order_id;
+
+                    // notify to all deliveryGuy attached with the store
+                    $restaurant = Restaurant::where('id', $restaurant_id)->first();
+                    if ($restaurant == null) return;
+                    $pivotUsers = $restaurant->users()->wherePivot('restaurant_id', $restaurant_id)->get();
+                    foreach ($pivotUsers as $pU) {
+                        if ($pU->hasRole('Delivery Guy')) {//send Notification to Delivery Guy
+                            $this->sendNotification($pU->id, $msg);
+                        }
+                    }
+                    break;
+                case NotificationType::DELIVERY_ASSIGNED:// Trigger when DeliveryGuy Accept the order
+                    // As a particular deliveryGuy accept the order,
+                    // so, all other deliveryGuy will notify that some one else is assigned for the order
+                    $msg['title'] = 'Delivery Assigned';
+                    $msg['message'] = 'Delivery assigned for the order ' .$unique_order_id;
+
+                    $restaurant = Restaurant::where('id', $restaurant_id)->first();
+                    if ($restaurant == null) return;
+                    $pivotUsers = $restaurant->users()->wherePivot('restaurant_id', $restaurant_id)->get();
+                    foreach ($pivotUsers as $pU) {
+                        if ($pU->hasRole('Delivery Guy')) {//send Notification to Delivery Guy
+                            $this->sendNotification($pU->id, $msg);
+                        }
+                    }
+                    break;
+                case NotificationType::DELIVERY_RE_ASSIGNED: // Triggered when a new DeliveryGuy is reassigned
+                    $msg['title'] = 'Delivery ReAssigned';
+                    $msg['message'] = 'Delivery re-assigned for the order ' .$unique_order_id;
+
+                    $acceptDelivery = AcceptDelivery::where('order_id', $order_id)->first();
+                    if($acceptDelivery == null) return;
+                    $this->sendNotification($acceptDelivery->user_id, $msg);
+
+                    $alert = new Alert();
+                    $alert->data = json_encode($msg);
+                    $alert->user_id = $acceptDelivery->user_id;
+                    $alert->is_read = 0;
+                    $alert->save();
+                    break;
+                case NotificationType::ORDER_CANCELLED:
+                    $msg['title'] =  'Order Cancelled';
+                    $msg['message'] = $unique_order_id .' Cancelled by the user';
+
+                    $acceptDelivery = AcceptDelivery::where('order_id', $order_id)->first();
+                    if($acceptDelivery == null){
+                        // there might be chance that the order is cancelled before delivery assigned
+                        // in this case we need to send the cancel notification to all the deliveryGuy attached with the store
+                        $restaurant = Restaurant::where('id', $restaurant_id)->first();
+                        if ($restaurant == null) return;
+                        $pivotUsers = $restaurant->users()->wherePivot('restaurant_id', $restaurant_id)->get();
+                        foreach ($pivotUsers as $pU) {
+                            if ($pU->hasRole('Delivery Guy')) {//send Notification to Delivery Guy
+                                $this->sendNotification($pU->id, $msg);
+
+                                $alert = new Alert();
+                                $alert->data = json_encode($msg);
+                                $alert->user_id = $acceptDelivery->user_id;
+                                $alert->is_read = 0;
+                                $alert->save();
+                            }
+                        }
+                    }else{
+                        $this->sendNotification($acceptDelivery->user_id, $msg);
+
+                        $alert = new Alert();
+                        $alert->data = json_encode($msg);
+                        $alert->user_id = $acceptDelivery->user_id;
+                        $alert->is_read = 0;
+                        $alert->save();
+                    }
+                    break;
+                case NotificationType::ORDER_TRANSFERRED:
+                    $msg['title'] =  'Order Transferred';
+                    $msg['message'] = $unique_order_id .' Transferred to other Delivery Guy';
+                    if($deliveryguy_id == null) return;
+                    $this->sendNotification($deliveryguy_id, $msg);
+
+                    $alert = new Alert();
+                    $alert->data = json_encode($msg);
+                    $alert->user_id =$deliveryguy_id;
+                    $alert->is_read = 0;
+                    $alert->save();
+                    break;
+            }
+
+        }
     }
 
 }

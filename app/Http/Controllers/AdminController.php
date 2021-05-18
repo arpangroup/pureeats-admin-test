@@ -49,6 +49,7 @@ use Omnipay\Omnipay;
 use OneSignal;
 use Spatie\Permission\Models\Role;
 use Yajra\DataTables\DataTables;
+use NotificationType;
 
 use Illuminate\Support\Facades\Log;
 
@@ -2218,7 +2219,7 @@ class AdminController extends Controller
         ));
     }
 
-/**
+ /**
  * @param Request $request
  */
     public function cancelOrderFromAdmin(Request $request, TranslationHelper $translationHelper)
@@ -2269,6 +2270,11 @@ class AdminController extends Controller
                     Log::channel('orderlog')->info('Order Cancel notification send successfully');
                 }
 
+                // Send push notification to DeliveryGuy
+                $notify = new PushNotify();
+                $notify->sendPushNotificationToDeliveryGuy(NotificationType::ORDER_CANCELLED, $order->orderstatus_id, $order->id, $order->unique_order_id, $order->restaurant_id);
+
+
                 return redirect()->back()->with(['success' => 'Operation Successful']);
             }
         } catch (\Illuminate\Database\QueryException $qe) {
@@ -2296,6 +2302,12 @@ class AdminController extends Controller
             $order->prepare_time = 0;
             $order->restaurant_accept_at = Carbon::now()->toDateTimeString();//"2019-03-11 12:25:00"
             $order->save();
+
+            // Send push notification to DeliveryGuy
+            $notify = new PushNotify();
+            $notify->sendPushNotificationToDeliveryGuy(NotificationType::ORDER_ARRIVED, $order->orderstatus_id, $order->id, $order->unique_order_id, $order->restaurant_id);
+
+
             // Send SMS Notification to Delivery Guy
             if (config('settings.smsDeliveryNotify') == 'true') {
                 //get restaurant
@@ -2313,6 +2325,7 @@ class AdminController extends Controller
                             $otp = null;
                             $smsnotify = new Sms();
                             $smsnotify->processSmsAction('OD_NOTIFY', $pU->phone, $otp, $message);
+
                         }
                     }
                 }
@@ -2348,6 +2361,17 @@ class AdminController extends Controller
             }
             $order->rider_accept_at = Carbon::now()->toDateTimeString();//"2019-03-11 12:25:00"
             $order->save();
+
+            try{
+                // Send push notification to DeliveryGuy
+                $notify = new PushNotify();
+                $notify->sendPushNotificationToDeliveryGuy(NotificationType::DELIVERY_ASSIGNED, $order->orderstatus_id, $order->id, $order->unique_order_id, $order->restaurant_id);
+
+            }catch (\Throwable $e){
+                return redirect()->back()->with(array('message' => 'Something Went Wrong during notification send'));
+            }
+
+
             return redirect()->back()->with(array('success' => 'Order Assigned'));
         } catch (Illuminate\Database\QueryException $e) {
             $errorCode = $e->errorInfo[1];
@@ -2362,12 +2386,32 @@ class AdminController extends Controller
  */
     public function reAssignDeliveryFromAdmin(Request $request)
     {
-
         $assignment = AcceptDelivery::where('order_id', $request->order_id)->first();
+        $previouslyAssignedDeliveryGuyId = $assignment->user_id;
         $assignment->user_id = $request->user_id;
         $assignment->is_complete = 0;
         $assignment->updated_at = Carbon::now();
         $assignment->save();
+
+        try{
+            // if the order is already assigned to some other user
+            // then send the order transfered notification to the first user
+            if($previouslyAssignedDeliveryGuyId != null){
+                if (config('settings.enablePushNotificationOrders') == 'true') {
+                    $order = Order::where('id', $assignment->order_id)->first();
+                    // Send push notification to DeliveryGuy
+                    $notify = new PushNotify();
+                    // send OrderArrived notification to new deliveryGuy
+                    $notify->sendPushNotificationToDeliveryGuy(NotificationType::DELIVERY_RE_ASSIGNED, $order->orderstatus_id, $order->id, $order->unique_order_id, $order->restaurant_id);
+                    // send order transferred notification to previous deliveryGuy
+                    if($previouslyAssignedDeliveryGuyId != $assignment->user_id){
+                        $notify->sendPushNotificationToDeliveryGuy(NotificationType::ORDER_TRANSFERRED, $order->orderstatus_id, $order->id, $order->unique_order_id, $order->restaurant_id, $previouslyAssignedDeliveryGuyId);
+                    }
+                }
+            }
+        }catch (\Throwable $th){
+            return redirect()->back()->with(array('message' => 'Something Went Wrong during notification send ' .$th->getMessage()));
+        }
 
         return redirect()->back()->with(array('success' => 'Order reassigned successfully'));
     }

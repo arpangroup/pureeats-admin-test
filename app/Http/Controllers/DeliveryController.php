@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use JWTAuth;
 use JWTAuthException;
+use NotificationType;
 
 class DeliveryController extends Controller
 {
@@ -630,6 +631,15 @@ class DeliveryController extends Controller
                                     $query->select('id', 'name', 'phone');
                                 }))
                                 ->first();
+                            try{
+                                // Send push notification to DeliveryGuy
+                                $notify = new PushNotify();
+                                $notify->sendPushNotificationToDeliveryGuy(NotificationType::DELIVERY_ASSIGNED, $order->orderstatus_id, $order->id, $order->unique_order_id, $order->restaurant_id);
+
+                            }catch (\Throwable $e){
+                                return redirect()->back()->with(array('message' => 'Something Went Wrong during notification send'));
+                            }
+
                             // sleep(3);
                             if (config('settings.enablePushNotificationOrders') == 'true') {
                                 $notify = new PushNotify();
@@ -912,6 +922,7 @@ class DeliveryController extends Controller
                 if (config('settings.enableDeliveryPin') == 'true') {
                     if ($order->delivery_pin == strtoupper($request->delivery_pin)) {
                         $order->orderstatus_id = '5'; //Accepted by delivery boy (Deliery Boy Assigned)
+                        $order->rider_deliver_at = Carbon::now()->toDateTimeString();// Produces something like "2019-03-11 12:25:00"
                         $order->save();
 
                         $completeDelivery = AcceptDelivery::where('order_id', $order->id)->first();
@@ -1193,7 +1204,7 @@ class DeliveryController extends Controller
      * @param $lat
      * @param $lng
      */
-    public function updateHeartBeat($user, $lat, $lng, $meta = null){
+    public function updateHeartBeat($user, $lat, $lng, $count, $meta = null){
         $location = array('lat' => $lat,'lng' => $lng, 'bearing' => '');
         $current_date_time = Carbon::now()->toDateTimeString();// Produces something like "2019-03-11 12:25:00"
         $current_timestamp = Carbon::now()->timestamp; // Produces something like 1552296328
@@ -1234,6 +1245,7 @@ class DeliveryController extends Controller
         $loginSession->last_checkout_at = $current_date_time;
         //$loginSession->location = json_encode($location);// it save as string
         $loginSession->location = $location;//this save the actual json data
+        $loginSession->count = $count;
         $loginSession->save();
 
         $deliveryUser = $user;
@@ -1255,14 +1267,94 @@ class DeliveryController extends Controller
     {
         $user = auth()->user();
         if ($user && $request->lat && $request->lng) {
-            $this->updateHeartBeat($user, $request->lat, $request->lng, null);
-            return $this->getDeliveryOrders($request);
+            $this->updateHeartBeat($user, $request->lat, $request->lng, $request->count , null);
+            //return $this->getDeliveryOrders($request);
+
+
+            $acceptDeliveries = AcceptDelivery::where('user_id', Auth::user()->id)->where('is_complete', 0)->get();
+            $countAcceptedOrder = count($acceptDeliveries);
+
+            // for 5th heartbeat check if there exist any new order
+            // we are checking it with a fix number, to reduce the database hit
+            $deliveryGuyNewOrders = collect();
+            if($request->count == '5'){
+                $orders = Order::where('orderstatus_id', '2')
+                    ->where('delivery_type', '1')
+                    ->with('restaurant')
+                    ->orderBy('id', 'DESC')
+                    ->get();
+                $userRestaurants = $user->restaurants;
+
+                foreach ($orders as $order) {
+                    foreach ($userRestaurants as $ur) {
+                        //checking if delivery guy is assigned to that restaurant
+                        if ($order->restaurant->id == $ur->id) {
+                            $deliveryGuyNewOrders->push($order);
+                        }
+                    }
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'new_orders' => $deliveryGuyNewOrders,
+                'accepted_orders' => [],
+                'pickedup_orders' => [],
+                'cancelled_orders' => [],
+                'transferred_orders' => [],
+                'count_accepted_order' => $countAcceptedOrder,
+            ];
+            return response()->json($response);
+
         }else{
             if(!$user)throw new AuthenticationException(ErrorCode::PHONE_NOT_EXIST, "Customer not found for " .$request->phone);
             if(!$request->lat)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "lat should not be null");
             if(!$request->lng)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "lng should not be null");
             throw new AuthenticationException(ErrorCode::BAD_RESPONSE, "Invalid request body");
         }
+    }
+
+
+    /**
+     * @param $user_id
+     */
+    public function getLoginHistory(Request $request)
+    {
+        $user = auth()->user();
+        if(!$user)throw new AuthenticationException(ErrorCode::PHONE_NOT_EXIST, "Customer not found for " .$request->phone);
+
+        $sessions = LoginSession::where('user_id', $user->id)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $THRESHOLD_TIME = 2;
+        if (config('settings.logoutThresholdTime') != null) {
+            $THRESHOLD_TIME = config('settings.logoutThresholdTime');
+        }
+
+
+        $loginSessions = collect();
+        if($sessions != null){
+            foreach ($sessions as $session) {
+                $from = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::now()->toDateTimeString());
+                $to = Carbon::createFromFormat('Y-m-d H:i:s', $session->last_checkout_at);
+                $diffInMinutes = round(abs(strtotime($from) - strtotime($to)) /60, 2); //Output: 20
+
+                $sessionObj = array(
+                    'login_at' => date("d-M-y h:i a", strtotime($session->created_at)),
+                    'logout_at' => date("d-M-y h:i a", strtotime($session->updated_at)),
+                    'last_seen' => date("d-M-y h:i a", strtotime($session->last_checkout_at)),
+                    'is_online' => false,
+                );
+                if($diffInMinutes < $THRESHOLD_TIME){
+                    $sessionObj['is_online'] = true;
+                }else{
+                    $sessionObj['is_online'] = false;
+                }
+                $loginSessions->push($sessionObj);
+            }
+        }
+        return response()->json($loginSessions);
     }
 
     /*############################# 02-May-2021[END] #####################################*/

@@ -258,6 +258,7 @@ Route::group(['middleware' => ['jwt.auth']], function () {
     Route::post('/conversation/chat', ['uses' => 'ChatController@deliveryCustomerChat',]);
     Route::post('/change-avatar', ['uses' => 'UserController@changeAvatar',]);
     Route::post('/check-ban', ['uses' => 'UserController@checkBan',]);
+    Route::post('/delivery/get-login-history', ['uses' => 'DeliveryController@getLoginHistory',]);//NEW
 });
 
 Route::get('/delivery/get-login-history/{user_id}', ['uses' => 'DeliveryController@getLoginHistory',]);//NEW
