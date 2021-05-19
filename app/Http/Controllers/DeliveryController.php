@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Log;
 use JWTAuth;
 use JWTAuthException;
 use NotificationType;
+use ErrorCode;
 
 class DeliveryController extends Controller
 {
