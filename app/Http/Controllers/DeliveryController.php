@@ -206,7 +206,7 @@ class DeliveryController extends Controller
                 }
             }else{
                 if(!$user)throw new AuthenticationException(ErrorCode::PHONE_NOT_EXIST, "driver not found for " .$request->phone);
-                if(!$user->hasRole('Customer'))throw new AuthenticationException(ErrorCode::BAD_REQUEST, "Invalid Role ");
+                if(!$user->hasRole('Delivery Guy'))throw new AuthenticationException(ErrorCode::BAD_REQUEST, "Invalid Role ");
                 throw new AuthenticationException(ErrorCode::BAD_RESPONSE, "Something error happened");
             }
         }else{
