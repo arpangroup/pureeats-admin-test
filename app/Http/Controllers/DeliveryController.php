@@ -1146,6 +1146,46 @@ class DeliveryController extends Controller
                 if($lastLog) $lastPayment = $lastLog->amount;
             }
 
+
+            $dateRange = Carbon::today()->subDays(7);
+            $earningData = DB::table('transactions')
+                ->where('payable_id', $user->id)
+                ->where('created_at', '>=', $dateRange)
+                ->where('type', 'deposit')
+                ->select(DB::raw('sum(amount) as total'), DB::raw('date(created_at) as dates'))
+                ->groupBy('dates')
+                ->orderBy('dates', 'desc')
+                ->get();
+
+            for ($i = 0; $i <= 6; $i++) {
+                if (!isset($earningData[$i])) {
+                    $amount[] = 0;
+                } else {
+                    $amount[] = $earningData[$i]->total / 100;
+                }
+            }
+
+            for ($i = 0; $i <= 6; $i++) {
+                $days[] = Carbon::now()->subDays($i)->format('D');
+            }
+
+            foreach ($amount as $amt) {
+                $amtArr[] = [
+                    'y' => $amt,
+                ];
+            }
+            $amtArr = array_reverse($amtArr);
+            foreach ($days as $key => $day) {
+                $dayArr[] = [
+                    'x' => $day,
+                ];
+            }
+            $dayArr = array_reverse($dayArr);
+            $chartData = [];
+            for ($i = 0; $i <= 6; $i++) {
+                array_push($chartData, ($amtArr[$i] + $dayArr[$i]));
+            }
+
             $response = [
                 'success' => true,
                 'data' => [
@@ -1167,7 +1207,10 @@ class DeliveryController extends Controller
                     'this_month_earning_amount' => $this->getTotalDepositAmount($thisMonthEarning),
                     //'cash_in_hold' => ($delideliveryCollection != null) ? $deliveryCollection->amount : 0,
                     'cash_in_hold' => 0,
-                    'last_payment' => $lastPayment
+                    'last_payment' => $lastPayment,
+                    'chartData' => $chartData,
+
+
                 ],
             ];
             return response()->json($response, 201);
@@ -1264,14 +1307,21 @@ class DeliveryController extends Controller
      */
     public function scheduleHeartBeat(Request $request)
     {
-        $user = auth()->user();
-        if ($user && $request->lat && $request->lng) {
-            $this->updateHeartBeat($user, $request->lat, $request->lng, $request->count , null);
+        $deliveryUser = auth()->user();
+        //$deliveryUser = auth()->user();
+
+        if ($deliveryUser && $deliveryUser->hasRole('Delivery Guy')) {//$request->lat && $request->lng
+            $this->updateHeartBeat($deliveryUser, $request->lat, $request->lng, $request->count , null);
             //return $this->getDeliveryOrders($request);
 
+            $onGoingDeliveriesCount = AcceptDelivery::whereHas('order', function ($query) {
+                $query->whereIn('orderstatus_id', ['3', '4', '73', '10', '710', '11']);
+            })->where('user_id', $deliveryUser->id)->where('is_complete', 0)->count();
 
-            $acceptDeliveries = AcceptDelivery::where('user_id', Auth::user()->id)->where('is_complete', 0)->get();
-            $countAcceptedOrder = count($acceptDeliveries);
+            $completedDeliveriesCount = AcceptDelivery::whereHas('order', function ($query) {
+                $query->whereIn('orderstatus_id', ['5']);
+            })->where('user_id', $deliveryUser->id)->where('is_complete', 1)->count();
+
 
             // for 5th heartbeat check if there exist any new order
             // we are checking it with a fix number, to reduce the database hit
@@ -1282,7 +1332,7 @@ class DeliveryController extends Controller
                     ->with('restaurant')
                     ->orderBy('id', 'DESC')
                     ->get();
-                $userRestaurants = $user->restaurants;
+                $userRestaurants = $deliveryUser->restaurants;
 
                 foreach ($orders as $order) {
                     foreach ($userRestaurants as $ur) {
@@ -1301,7 +1351,8 @@ class DeliveryController extends Controller
                 'pickedup_orders' => [],
                 'cancelled_orders' => [],
                 'transferred_orders' => [],
-                'count_accepted_order' => $countAcceptedOrder,
+                'on_going_deliveries_count' => $onGoingDeliveriesCount,
+                'completed_deliveries_count' => $completedDeliveriesCount,
             ];
             return response()->json($response);
 
