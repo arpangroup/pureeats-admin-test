@@ -1101,22 +1101,20 @@ class DeliveryController extends Controller
         if ($user) {
             //$earnings = $user->transactions()->orderBy('id', 'DESC')->get();
 
-            $todaysEarning = $user->transactions()->whereDate('created_at', Carbon::today())->orderBy('id', 'DESC')->get();
-            $yesterdaysEarning = $user->transactions()->whereDate('created_at', Carbon::yesterday())->orderBy('id', 'DESC')->get();
-            $thisWeekEarning = $user->transactions()->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->orderBy('id', 'DESC')->get();
+            $todaysEarning = $user->transactions()->whereDate('created_at', Carbon::today()->toDateString())->orderBy('id', 'DESC')->get();
+            $yesterdaysEarning = $user->transactions()->whereDate('created_at', Carbon::yesterday()->toDateString())->orderBy('id', 'DESC')->get();
+            $thisWeekEarning = $user->transactions()->whereBetween('created_at', [Carbon::now()->startOfWeek()->toDateString(), Carbon::now()->endOfWeek()->toDateString()])->orderBy('id', 'DESC')->get();
             $thisMonthEarning = $user->transactions()->whereYear('created_at', Carbon::now()->year)->whereMonth('created_at', Carbon::now()->month)->orderBy('id', 'DESC')->get();
 
 
             $todaysCompletedDeliveriesCount = AcceptDelivery::whereHas('order', function ($query) {
-                $query->whereIn('orderstatus_id', ['5'])->whereDate('created_at', Carbon::today());
+                $query->whereIn('orderstatus_id', ['5'])->whereDate('created_at', Carbon::today()->toDateString());
             })->where('user_id', $user->id)->where('is_complete', 1)->count();
 
-            //$yesterday = date("Y-m-d", strtotime( '-1 days' ) );
+
             $yesterdaysCompletedDeliveriesCount = AcceptDelivery::whereHas('order', function ($query) {
-                $query->whereIn('orderstatus_id', ['5'])->where('created_at', '=', Carbon::yesterday());
-                //$query->whereIn('orderstatus_id', ['5'])->where('created_at', '=', $yesterday);
+                $query->whereIn('orderstatus_id', ['5'])->whereDate('created_at', Carbon::yesterday()->toDateString());
             })->where('user_id', $user->id)->where('is_complete', 1)->count();
-
 
             $thisWeekCompletedDeliveriesCount = AcceptDelivery::whereHas('order', function ($query) {
                 //$query->whereIn('orderstatus_id', ['5'])->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
