@@ -502,7 +502,7 @@
                     @endif 
                     
                     @if($order->delivery_type==1)
-                        @if($order->orderstatus_id == 3 || $order->orderstatus_id == 4 || $order->orderstatus_id == 73 || $order->orderstatus_id == 710)
+                        @if($order->orderstatus_id == 3 || $order->orderstatus_id == 4 || $order->orderstatus_id == 10 || $order->orderstatus_id == 73 || $order->orderstatus_id == 710)
                            @if($order->accept_delivery && $order->accept_delivery->user && $order->accept_delivery->user->name)
                            <p class="text-center mb-3"> <strong>Re-Assigned Delivery Guy: {{ $order->accept_delivery->user->name }}</strong></p>
                            @endif
