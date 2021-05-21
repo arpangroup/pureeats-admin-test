@@ -504,7 +504,7 @@
                     @if($order->delivery_type==1)
                         @if($order->orderstatus_id == 3 || $order->orderstatus_id == 4 || $order->orderstatus_id == 10 || $order->orderstatus_id == 73 || $order->orderstatus_id == 710)
                            @if($order->accept_delivery && $order->accept_delivery->user && $order->accept_delivery->user->name)
-                           <p class="text-center mb-3"> <strong>Re-Assigned Delivery Guy: {{ $order->accept_delivery->user->name }}</strong></p>
+                           <p class="text-center mb-3"> <strong>Assigned Delivery Guy: {{ $order->accept_delivery->user->name }}</strong></p>
                            @endif
                             <form action="{{route('admin.reAssignDeliveryFromAdmin')}}" method="POST">
                                 <input type="text" hidden value="{{$order->id}}" name="order_id">
@@ -515,7 +515,9 @@
                                         <select class="form-control select" data-fouc name="user_id" required="required">
                                             <option></option>
                                             @foreach ($users as $user)
-                                            <option value="{{$user->id}}">{{$user->name}}</option>
+                                                @if($order->accept_delivery->user_id != $user->id)
+                                                    <option value="{{$user->id}}">{{$user->name}}</option>
+                                                @endif
                                             @endforeach
                                         </select>
                                     </div>
@@ -592,6 +594,16 @@
                                 @endif
                             </td>
                         </tr>
+
+                        @if ($order->rider_reassigned_at !== null)
+                            <tr>
+                                <th scope="row">Delivery Re-Assigned</th>
+                                <td>
+                                    {{ date("h:i a", strtotime($order->rider_reassigned_at))}}
+                                </td>
+                            </tr>
+                        @endif
+
                         <tr>
                             <th scope="row">DeliveryGuy Reached PickUpLocation</th>
                             <td>

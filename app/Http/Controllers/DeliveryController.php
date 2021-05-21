@@ -585,7 +585,7 @@ class DeliveryController extends Controller
 
             if ($order) {
                 //if($order->orderstatus_id != '2' || $order->orderstatus_id != '7') throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Order is already accepted");
-                if($order->accept_delivery != null) throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Order is already accepted");
+                //if($order->accept_delivery != null && $order->accept_delivery->user_id == $deliveryUser->id) throw new ValidationException(\ErrorCode::OPERATION_ALREADY_COMPLETED, "Order is already accepted");
 
                 $deliveryGuyCommissionRate = $deliveryUser->delivery_guy_detail->commission_rate;
                 $commission = 0;
@@ -668,6 +668,9 @@ class DeliveryController extends Controller
                         return response()->json($singleOrder);
                     }
                 } else {
+                    $order->rider_reassigned_at = Carbon::now()->toDateTimeString();
+                    $order->save();
+
                     $singleOrder = Order::where('id', $request->order_id)
                         ->with('restaurant')
                         ->with('orderitems.order_item_addons')

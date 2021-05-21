@@ -182,6 +182,8 @@ class PushNotify
             'unique_order_id' => $unique_order_id,
             'order_status_id' =>$orderstatus_id,
             'notification_type' => $notificationType,
+            'user_id' => -1,
+            'channel' => 'WEB',
         );
 
         if($notificationType){
@@ -196,6 +198,7 @@ class PushNotify
                     $pivotUsers = $restaurant->users()->wherePivot('restaurant_id', $restaurant_id)->get();
                     foreach ($pivotUsers as $pU) {
                         if ($pU->hasRole('Delivery Guy')) {//send Notification to Delivery Guy
+                            $msg['user_id'] = $pU->id;
                             $this->sendNotification($pU->id, $msg);
                         }
                     }
@@ -211,6 +214,7 @@ class PushNotify
                     $pivotUsers = $restaurant->users()->wherePivot('restaurant_id', $restaurant_id)->get();
                     foreach ($pivotUsers as $pU) {
                         if ($pU->hasRole('Delivery Guy')) {//send Notification to Delivery Guy
+                            $msg['user_id'] = $pU->id;
                             $this->sendNotification($pU->id, $msg);
                         }
                     }
@@ -221,7 +225,8 @@ class PushNotify
 
                     $acceptDelivery = AcceptDelivery::where('order_id', $order_id)->first();
                     if($acceptDelivery == null) return;
-                    $this->sendNotification($acceptDelivery->user_id, $msg);
+                    $msg['user_id'] = $acceptDelivery->user_id;
+                    $this->sendNotification($acceptDelivery->user_id, $msg);//only to reAssigned DeliveryGuy
 
                     $alert = new Alert();
                     $alert->data = json_encode($msg);
@@ -242,6 +247,7 @@ class PushNotify
                         $pivotUsers = $restaurant->users()->wherePivot('restaurant_id', $restaurant_id)->get();
                         foreach ($pivotUsers as $pU) {
                             if ($pU->hasRole('Delivery Guy')) {//send Notification to Delivery Guy
+                                $msg['user_id'] = $pU->id;
                                 $this->sendNotification($pU->id, $msg);
 
                                 $alert = new Alert();
@@ -252,6 +258,7 @@ class PushNotify
                             }
                         }
                     }else{
+                        $msg['user_id'] = $acceptDelivery->user_id;
                         $this->sendNotification($acceptDelivery->user_id, $msg);
 
                         $alert = new Alert();
@@ -265,6 +272,7 @@ class PushNotify
                     $msg['title'] =  'Order Transferred';
                     $msg['message'] = $unique_order_id .' Transferred to other Delivery Guy';
                     if($deliveryguy_id == null) return;
+                    $msg['user_id'] = $deliveryguy_id;
                     $this->sendNotification($deliveryguy_id, $msg);
 
                     $alert = new Alert();
