@@ -126,6 +126,7 @@ class PushNotify
     public function sendNotification($user_id, $msg){
         $secretKey = 'key=' . config('settings.firebaseSecret');
         $token = PushToken::where('user_id', $user_id)->first();
+        Log::debug("SECRET_KEY: " .$secretKey);
 
         if ($token) {
             $fullData = array(
@@ -139,6 +140,7 @@ class PushNotify
                 ->withData(json_encode($fullData))
                 ->post();
 
+            Log::debug("RESPONSE: " .$response);
             Log::debug('#################Notification Send Success for userId '.$user_id);
         }else{
             Log::error('#################token not available for userId: ' .$user_id);
