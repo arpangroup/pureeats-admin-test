@@ -7,6 +7,7 @@ use App\Orderstatus;
 use App\PushToken;
 use App\Translation;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Ixudra\Curl\Facades\Curl;
 use NotificationType;
 
@@ -137,7 +138,12 @@ class PushNotify
                 ->withHeader("Authorization: $secretKey")
                 ->withData(json_encode($fullData))
                 ->post();
+
+            Log::debug('#################Notification Send Success for userId '.$user_id);
+        }else{
+            Log::error('#################token not available for userId: ' .$user_id);
         }
+
     }
 
 
@@ -175,6 +181,8 @@ class PushNotify
      * Send the Order arrived notification to all the delivery guy, when sore accepted the order
      */
     public function sendPushNotificationToDeliveryGuy($notificationType, $orderstatus_id, $order_id, $unique_order_id, $restaurant_id, $deliveryguy_id = null){
+        Log::debug('Inside sendPushNotificationToDeliveryGuy........');
+        Log::debug('NOTIFICATION_TYPE: ' .$notificationType . ' :: ORDER_STATUS: ' .$orderstatus_id . ' :: ORDER_ID: ' .$order_id .' :: UNIQUE_ORDER_ID: ' .$unique_order_id . ' :: RESTAURANT_ID: ' .$restaurant_id . ' :: DELIVERY_GUY_ID: '.$deliveryguy_id);
         $msg = array(
             'title' => '',
             'message' =>'',
@@ -189,43 +197,52 @@ class PushNotify
         if($notificationType){
             switch ($notificationType) {
                 case NotificationType::ORDER_ARRIVED: // Trigger when Store accepted the order
+                    Log::debug('TYPE: ORDER_ARRIVED' );
                     $msg['title'] = 'New Order Arrived';
                     $msg['message'] = 'Please accept the order ' . $unique_order_id;
 
                     // notify to all deliveryGuy attached with the store
                     $restaurant = Restaurant::where('id', $restaurant_id)->first();
+                    Log::debug('RESTAURANT: ' .json_encode($restaurant));
                     if ($restaurant == null) return;
                     $pivotUsers = $restaurant->users()->wherePivot('restaurant_id', $restaurant_id)->get();
+                    Log::debug('PIVOT_USERS: ' .json_encode($pivotUsers));
                     foreach ($pivotUsers as $pU) {
                         if ($pU->hasRole('Delivery Guy')) {//send Notification to Delivery Guy
                             $msg['user_id'] = $pU->id;
+                            Log::debug('SEND_NOTIFICATION_TO: ' .$pU->id);
                             $this->sendNotification($pU->id, $msg);
                         }
                     }
                     break;
                 case NotificationType::DELIVERY_ASSIGNED:// Trigger when DeliveryGuy Accept the order
+                    Log::debug('TYPE: DELIVERY_ASSIGNED' );
                     // As a particular deliveryGuy accept the order,
                     // so, all other deliveryGuy will notify that some one else is assigned for the order
                     $msg['title'] = 'Delivery Assigned';
                     $msg['message'] = 'Delivery assigned for the order ' .$unique_order_id;
 
                     $restaurant = Restaurant::where('id', $restaurant_id)->first();
+                    Log::debug('RESTAURANT: ' .json_encode($restaurant));
                     if ($restaurant == null) return;
                     $pivotUsers = $restaurant->users()->wherePivot('restaurant_id', $restaurant_id)->get();
                     foreach ($pivotUsers as $pU) {
                         if ($pU->hasRole('Delivery Guy') && $deliveryguy_id != $pU->id) {//send Notification to other Delivery Guy
                             $msg['user_id'] = $pU->id;
+                            Log::debug('Sending notification to '.$pU->id );
                             $this->sendNotification($pU->id, $msg);
                         }
                     }
                     break;
                 case NotificationType::DELIVERY_RE_ASSIGNED: // Triggered when a new DeliveryGuy is reassigned
+                    Log::debug('TYPE: DELIVERY_RE_ASSIGNED' );
                     $msg['title'] = 'Delivery ReAssigned';
                     $msg['message'] = 'Delivery re-assigned for the order ' .$unique_order_id;
 
                     $acceptDelivery = AcceptDelivery::where('order_id', $order_id)->first();
                     if($acceptDelivery == null) return;
                     $msg['user_id'] = $acceptDelivery->user_id;
+                    Log::debug('Sending notification to '.$acceptDelivery->user_id );
                     $this->sendNotification($acceptDelivery->user_id, $msg);//only to reAssigned DeliveryGuy
 
                     $alert = new Alert();
@@ -235,11 +252,14 @@ class PushNotify
                     $alert->save();
                     break;
                 case NotificationType::ORDER_CANCELLED:
+                    Log::debug('TYPE: ORDER_CANCELLED' );
                     $msg['title'] =  'Order Cancelled';
                     $msg['message'] = $unique_order_id .' Cancelled by the user';
 
                     $acceptDelivery = AcceptDelivery::where('order_id', $order_id)->first();
+                    Log::debug('ACCEPT_DELIVERY: ' .json_encode($acceptDelivery));
                     if($acceptDelivery == null){
+                        Log::debug('$acceptDelivery is null' );
                         // there might be chance that the order is cancelled before delivery assigned
                         // in this case we need to send the cancel notification to all the deliveryGuy attached with the store
                         $restaurant = Restaurant::where('id', $restaurant_id)->first();
@@ -248,6 +268,7 @@ class PushNotify
                         foreach ($pivotUsers as $pU) {
                             if ($pU->hasRole('Delivery Guy')) {//send Notification to Delivery Guy
                                 $msg['user_id'] = $pU->id;
+                                Log::debug('Sending notification to '.$pU->id );
                                 $this->sendNotification($pU->id, $msg);
 
                                 $alert = new Alert();
@@ -258,7 +279,9 @@ class PushNotify
                             }
                         }
                     }else{
+                        Log::debug('$acceptDelivery is not null' );
                         $msg['user_id'] = $acceptDelivery->user_id;
+                        Log::debug('Sending notification to '.$acceptDelivery->user_id );
                         $this->sendNotification($acceptDelivery->user_id, $msg);
 
                         $alert = new Alert();
@@ -269,10 +292,13 @@ class PushNotify
                     }
                     break;
                 case NotificationType::ORDER_TRANSFERRED:
+                    Log::debug('TYPE: ORDER_TRANSFERRED' );
                     $msg['title'] =  'Order Transferred';
                     $msg['message'] = $unique_order_id .' Transferred to other Delivery Guy';
                     if($deliveryguy_id == null) return;
+
                     $msg['user_id'] = $deliveryguy_id;
+                    Log::debug('Sending notification to '.$deliveryguy_id );
                     $this->sendNotification($deliveryguy_id, $msg);
 
                     $alert = new Alert();

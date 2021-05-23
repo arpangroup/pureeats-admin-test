@@ -2292,6 +2292,7 @@ class AdminController extends Controller
  */
     public function acceptOrderFromAdmin(Request $request)
     {
+        Log::debug('###########Inside acceptOrderFromAdmin');
 
         $order = Order::where('id', $request->id)->first();
 
@@ -2304,6 +2305,7 @@ class AdminController extends Controller
             $order->save();
 
             // Send push notification to DeliveryGuy
+            Log::debug('Calling sendPushNotificationToDeliveryGuy...');
             $notify = new PushNotify();
             $notify->sendPushNotificationToDeliveryGuy(NotificationType::ORDER_ARRIVED, $order->orderstatus_id, $order->id, $order->unique_order_id, $order->restaurant_id);
 
@@ -2343,6 +2345,7 @@ class AdminController extends Controller
  */
     public function assignDeliveryFromAdmin(Request $request)
     {
+        Log::debug('Calling Inside assignDeliveryFromAdmin...');
         try {
             $assignment = new AcceptDelivery;
             $assignment->order_id = $request->order_id;
@@ -2365,6 +2368,7 @@ class AdminController extends Controller
             try{
                 // Send push notification to DeliveryGuy
                 $notify = new PushNotify();
+                Log::debug('Calling sendPushNotificationToDeliveryGuy...');
                 $notify->sendPushNotificationToDeliveryGuy(NotificationType::DELIVERY_ASSIGNED, $order->orderstatus_id, $order->id, $order->unique_order_id, $order->restaurant_id);
 
             }catch (\Throwable $e){
@@ -2386,6 +2390,7 @@ class AdminController extends Controller
  */
     public function reAssignDeliveryFromAdmin(Request $request)
     {
+        Log::debug('Inside reAssignDeliveryFromAdmin');
         $assignment = AcceptDelivery::where('order_id', $request->order_id)->first();
         $previouslyAssignedDeliveryGuyId = $assignment->user_id;
         $assignment->user_id = $request->user_id;
@@ -2407,9 +2412,11 @@ class AdminController extends Controller
                     // Send push notification to DeliveryGuy
                     $notify = new PushNotify();
                     // send OrderArrived notification to new deliveryGuy
+                    Log::debug('Calling sendPushNotificationToDeliveryGuy...to newly assigned deliveryGuy');
                     $notify->sendPushNotificationToDeliveryGuy(NotificationType::DELIVERY_RE_ASSIGNED, $order->orderstatus_id, $order->id, $order->unique_order_id, $order->restaurant_id);
                     // send order transferred notification to previous deliveryGuy
                     if($previouslyAssignedDeliveryGuyId != $assignment->user_id){
+                        Log::debug('Calling sendPushNotificationToDeliveryGuy...to previouslu assigned deliveryGuy');
                         $notify->sendPushNotificationToDeliveryGuy(NotificationType::ORDER_TRANSFERRED, $order->orderstatus_id, $order->id, $order->unique_order_id, $order->restaurant_id, $previouslyAssignedDeliveryGuyId);
                     }
                 }
