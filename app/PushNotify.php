@@ -213,7 +213,7 @@ class PushNotify
                     if ($restaurant == null) return;
                     $pivotUsers = $restaurant->users()->wherePivot('restaurant_id', $restaurant_id)->get();
                     foreach ($pivotUsers as $pU) {
-                        if ($pU->hasRole('Delivery Guy')) {//send Notification to Delivery Guy
+                        if ($pU->hasRole('Delivery Guy') && $deliveryguy_id != $pU->id) {//send Notification to other Delivery Guy
                             $msg['user_id'] = $pU->id;
                             $this->sendNotification($pU->id, $msg);
                         }

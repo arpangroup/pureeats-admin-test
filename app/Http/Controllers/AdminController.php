@@ -2393,6 +2393,11 @@ class AdminController extends Controller
         $assignment->updated_at = Carbon::now();
         $assignment->save();
 
+        $order = Order::where('id', $request->order_id)->first();
+        $order->rider_reassigned_at = Carbon::now()->toDateTimeString();
+        $order->save();
+
+
         try{
             // if the order is already assigned to some other user
             // then send the order transfered notification to the first user

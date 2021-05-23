@@ -635,7 +635,7 @@ class DeliveryController extends Controller
                             try{
                                 // Send push notification to DeliveryGuy
                                 $notify = new PushNotify();
-                                $notify->sendPushNotificationToDeliveryGuy(NotificationType::DELIVERY_ASSIGNED, $order->orderstatus_id, $order->id, $order->unique_order_id, $order->restaurant_id);
+                                $notify->sendPushNotificationToDeliveryGuy(NotificationType::DELIVERY_ASSIGNED, $order->orderstatus_id, $order->id, $order->unique_order_id, $order->restaurant_id, $deliveryUser->id);
 
                             }catch (\Throwable $e){
                                 return redirect()->back()->with(array('message' => 'Something Went Wrong during notification send'));
@@ -1250,7 +1250,8 @@ class DeliveryController extends Controller
      * @param $lng
      */
     public function updateHeartBeat($user, $lat, $lng, $count, $meta = null){
-        $location = array('lat' => $lat,'lng' => $lng, 'bearing' => '');
+        if($lat == null || $lng == null) return;
+        $location = array('lat' => (float)$lat,'lng' => (float)$lng, 'bearing' => '');
         $current_date_time = Carbon::now()->toDateTimeString();// Produces something like "2019-03-11 12:25:00"
         $current_timestamp = Carbon::now()->timestamp; // Produces something like 1552296328
 

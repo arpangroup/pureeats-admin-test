@@ -312,8 +312,8 @@
                     <div class="card-body">
                         <h4>Live Location</h4>
                         <br>
-                        <input type="hidden" id="currentLat"/>
-                        <input type="hidden" id="currentLng"/>
+                        <input type="text" id="currentLat"/>
+                        <input type="text" id="currentLng"/>
                         <br />
                         <div style="height: 370px;" id="locationMap"></div>
                     </div>
@@ -453,8 +453,8 @@
     @if($user->hasRole('Delivery Guy') && sizeof($sessions) > 0)
     const currentLat = @json(json_encode($sessions[0]->location['lat']) ?? NULL);
     const currentLng = @json(json_encode($sessions[0]->location['lng']) ?? NULL);
-    document.getElementById("currentLat").value = currentLat;
-    document.getElementById("currentLng").value = currentLng;
+    document.getElementById("currentLat").value = parseFloat(currentLat);
+    document.getElementById("currentLng").value = parseFloat(currentLng);
     const deliveryGuyLoc = {lat: parseFloat(currentLat), lng: parseFloat(currentLng) };
     const locBelurMath = {lat: 22.6322, lng: 88.3559 };
 
