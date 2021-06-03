@@ -723,14 +723,14 @@ class UserController extends Controller
 
             if($request->unique_order_id){
                 $running_orders = \App\Order::where('user_id', $user->id)
-                    ->whereIn('orderstatus_id', ['1', '2', '3', '4', '5', '6', '7', '8'])
+                    ->whereIn('orderstatus_id', ['1', '2', '3', '4', '5', '6', '7', '8', '10', '11', '73', '710'])
                     ->where('unique_order_id', $request->unique_order_id)
                     ->with('orderitems', 'restaurant')
                     //->first();
                     ->get();
             }else{
                 $running_orders = \App\Order::where('user_id', $user->id)
-                ->whereIn('orderstatus_id', ['1', '2', '3', '4', '7', '8'])
+                ->whereIn('orderstatus_id', ['1', '2', '3', '4', '7', '8', '10', '11', '73', '710'])
                 ->with('orderitems', 'restaurant')
                 ->get();
             }
@@ -742,7 +742,7 @@ class UserController extends Controller
                 foreach($running_orders as $running_order){
                     $delivery_details = null;
                     if ($running_order) {
-                        if ($running_order->orderstatus_id == 3 || $running_order->orderstatus_id == 4) {
+                        if ($running_order->orderstatus_id == 3 || $running_order->orderstatus_id == 4 || $running_order->orderstatus_id == 10 || $running_order->orderstatus_id == 11 || $running_order->orderstatus_id == 73 || $running_order->orderstatus_id == 710) {
                             //get assigned delivery guy and get the details to show to customers
                             $delivery_guy = AcceptDelivery::where('order_id', $running_order->id)->first();
                             if ($delivery_guy) {

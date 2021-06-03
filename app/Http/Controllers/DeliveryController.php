@@ -1318,6 +1318,11 @@ class DeliveryController extends Controller
             $this->updateHeartBeat($deliveryUser, $request->lat, $request->lng, $request->count , null);
             //return $this->getDeliveryOrders($request);
 
+            // Set delivery Guy GPS Location:
+            $deliveryUser->delivery_guy_detail->delivery_lat = $request->lat;
+            $deliveryUser->delivery_guy_detail->delivery_long = $request->lng;
+            $deliveryUser->delivery_guy_detail->save();
+
             $onGoingDeliveriesCount = AcceptDelivery::whereHas('order', function ($query) {
                 $query->whereIn('orderstatus_id', ['3', '4', '73', '10', '710', '11']);
             })->where('user_id', $deliveryUser->id)->where('is_complete', 0)->count();
