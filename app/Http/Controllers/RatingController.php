@@ -65,6 +65,7 @@ class RatingController extends Controller
      */
     public function saveNewRating(Request $request)
     {
+        return "hello";
         //return response()->json( ['success' => "hello world",]);
         $user = User::where('id', $request->user_id)->first();
 
@@ -167,35 +168,67 @@ class RatingController extends Controller
      */
     public function singleRatableOrder(Request $request)
     {
-        $user = User::where('id', $request->user_id)->first();
+        $user = auth()->user();
 
         if ($user) {
-            //get latest order
-            $userOrders = Order::where('user_id', $user->id)->where('orderstatus_id', 5)
-                ->with('restaurant')
-                ->with('orderitems')
-                ->get()
-                ->last();
+            if ($request->order_id){
+                $userOrder = Order::where('user_id', $user->id)->where('orderstatus_id', 5)
+                    ->where('id', $request->order_id)
+                    ->with('orderitems', 'restaurant')
+                    //->get()
+                    ->first();
+            }elseif ($request->unique_order_id){
+                $userOrder = Order::where('user_id', $user->id)->where('orderstatus_id', 5)
+                    ->where('unique_order_id', $request->unique_order_id)
+                    ->with('orderitems', 'restaurant')
+                    //->get()
+                    ->first();
+            }else{
+                //get latest order
+                $userOrder = Order::where('user_id', $user->id)->where('orderstatus_id', 5)
+                    ->with('restaurant')
+                    ->with('orderitems')
+                    ->get()
+                    ->last();
+            }
+
 
             //check if any order exists
-            if ($userOrders) {
+            if ($userOrder) {
 
                 //check if order is already rated or not
-                $rating = DB::table('ratings')->where('order_id', $userOrders->id)->get();
+                $rating = DB::table('ratings')->where('order_id', $userOrder->id)->get();
                 if ($rating->isEmpty()) {
+
+                    // Get Delivery Details:
+                    $delivery_guy = AcceptDelivery::where('order_id', $userOrder->id)->first();
+                    if ($delivery_guy) {
+                        $delivery_user = User::where('id', $delivery_guy->user_id)->first();
+                        $delivery_details = $delivery_user->delivery_guy_detail;
+                        if (!empty($delivery_details)) {
+                            $delivery_details = $delivery_details->toArray();
+                            $delivery_details['phone'] = $delivery_user->phone;
+                        }
+                    }
+                    $userOrder['delivery_details'] = $delivery_details;
+
+
+
+
                     $response = [
                         'ratable' => true,
-                        'data' => $userOrders,
+                        'order' => $userOrder->only(['id', 'unique_order_id', 'orderstatus_id', 'address', 'restaurant', 'delivery_details', 'orderitems']),
                     ];
+                    return response()->json($response);
+                }else{
+                    $response = ['ratable' => false, 'message' => "This order is already rated" ];
                     return response()->json($response);
                 }
 
+            }else{
+                $response = ['ratable' => false, 'message' => 'Order is not delivered yet' ];
+                return response()->json($response);
             }
-
-            $response = [
-                'ratable' => false,
-            ];
-            return response()->json($response);
         }
     }
 

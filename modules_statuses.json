@@ -1,5 +1,5 @@
 {
-    "SuperCache": true,
+    "SuperCache": false,
     "DeliveryAreaPro": true,
-    "RatingSystemPro": true
+    "RatingSystemPro": false
 }

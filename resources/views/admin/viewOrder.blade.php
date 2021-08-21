@@ -299,6 +299,13 @@
                         <div class="col-md-12 col-sm-12 d-flex justify-content-center">
                             <div class="form-group">
                                 <h3><strong>Order Snapshots</strong></h3>
+                                @if($order->screenshot != null)
+                                    <a href="{{url("/images/bill")}}{{ "/".$order->screenshot }}" target="_blank" style="display: inline-block;">
+                                        <img src="{{url("/images/bill")}}{{ "/".$order->screenshot }}"
+                                             alt="{{ $order->$order }}" height="320px" width="240px"
+                                             style="border-radius: 0.275rem;">
+                                    </a>
+                                @endif
                             </div>
                         </div>
                     </div>

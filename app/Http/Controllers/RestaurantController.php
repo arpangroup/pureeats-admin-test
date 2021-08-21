@@ -210,7 +210,7 @@ class RestaurantController extends Controller
     public function getDeliveryRestaurants(Request $request)
     {
         // Cache::forget('stores-delivery-active');
-        // Cache::forget('stores-delivery-inactive');
+        // Cache::forget('is_acceptedlivery-inactive');
         // die();
 
         // get all active restauants doing delivery
@@ -687,6 +687,8 @@ class RestaurantController extends Controller
                     ->get(array('items.*', 'item_categories.name as category_name'));
             }
 
+            return $items;
+
             $items = json_decode($items, true);
 
             $array = [];
@@ -694,8 +696,8 @@ class RestaurantController extends Controller
                 $array[$item['category_name']][] = $item;
             }
 
-            $this->processSuperCache('items-recommended-' . $restaurant->id, $recommended);
-            $this->processSuperCache('items-all-' . $restaurant->id, $array);
+            //$this->processSuperCache('items-recommended-' . $restaurant->id, $recommended);
+            //$this->processSuperCache('items-all-' . $restaurant->id, $array);
         }
 
         return response()->json(array(

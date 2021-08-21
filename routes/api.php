@@ -62,6 +62,14 @@ Route::post('/home', [
     'uses' => 'HomeController@loadHome',
 ]);
 
+Route::get('/restaurants', [
+    'uses' => 'RestaurantControllerV1@getRestaurants',
+]);
+
+Route::get('/restaurant', [
+    'uses' => 'RestaurantControllerV1@getRestaurantInfo',
+]);
+
 Route::post('/get-delivery-restaurants', [
     'uses' => 'RestaurantController@getDeliveryRestaurants',
 ]);

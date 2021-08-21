@@ -197,11 +197,9 @@
                                 </div>
                                 <div class="form-group row">
                                      <label class="col-lg-3 col-form-label">Rating:</label>
-        <!-- EndRatingAdminLabelEdit -->
                                     <div class="col-lg-9">
-                                        <input value="{{ $restaurant->rating }}" type="text" class="form-control form-control-lg rating" name="rating"
-                                             placeholder="0" readonly>
-        <!-- EndRatingAdminEdit -->
+                                        <input value="{{ $restaurant->rating }}" type="number" class="form-control form-control-lg" name="rating"
+                                             placeholder="0">
                                     </div>
                                 </div>
                                 <div class="form-group row">

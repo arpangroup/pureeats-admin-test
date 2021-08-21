@@ -80,7 +80,12 @@
         "files": [
             "app/Http/helpers.php",
             "app/Http/ErrorCode.php",
-            "app/Http/NotificationType.php"
+            "app/Http/NotificationType.php",
+            "app/Http/DeliveryType.php",
+            "app/Http/DeliveryChargeType.php",
+            "app/Http/StoreChargeType.php",
+            "app/Http/CalculationType.php",
+            "app/Http/RatingType.php"
         ],
         "classmap": [
             "database/seeds",

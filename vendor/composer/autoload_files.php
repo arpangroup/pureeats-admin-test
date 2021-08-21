@@ -101,4 +101,9 @@ return array(
     '6d394c3a532652dafb4dd296ba6a3f0b' => $baseDir . '/app/Http/helpers.php',
     '1a1ab46135b459d183a9e9eb82606543' => $baseDir . '/app/Http/ErrorCode.php',
     'd3623e4403a6b3576ca726546ab1f589' => $baseDir . '/app/Http/NotificationType.php',
+    '01c5f02853da6639ebc7f426f09ea3e5' => $baseDir . '/app/Http/DeliveryType.php',
+    'fda3acd0e44aaee30e4a65bf5f05664c' => $baseDir . '/app/Http/DeliveryChargeType.php',
+    '07a16e6f76e41820438535ad46c279cd' => $baseDir . '/app/Http/StoreChargeType.php',
+    'd024783cc4ed9963d1097ff3e763434a' => $baseDir . '/app/Http/CalculationType.php',
+    'dc986a517b57ab8efc4aad71ab5b6381' => $baseDir . '/app/Http/RatingType.php',
 );

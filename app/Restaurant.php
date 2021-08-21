@@ -31,10 +31,10 @@ class Restaurant extends Model implements Sortable
      protected $hidden = array('created_at', 'updated_at');
                 
         /*addisRatingStoreCode*/
-        public function getRatingAttribute()
-        {
-            return \Modules\RatingSystemPro\Entities\RatingStore::where('restaurant_id', $this->id)->average('rating');
-        }
+        // public function getRatingAttribute()
+        // {
+        //     return \Modules\RatingSystemPro\Entities\RatingStore::where('restaurant_id', $this->id)->average('rating');
+        // }
         /*endaddisRatingStoreCode*/
 
     public static function boot()
@@ -133,10 +133,10 @@ class Restaurant extends Model implements Sortable
     }
 
     /*addRelationshipCode*/ 
-        public function ratings()
-        {
-            return $this->belongsToMany(\Modules\RatingSystemPro\Entities\RatingStore::class);
-        }
+        // public function ratings()
+        // {
+        //     return $this->belongsToMany(\Modules\RatingSystemPro\Entities\RatingStore::class);
+        // }
         /*endaddRelationshipCode*/
 public function payment_gateways()
     {
@@ -169,6 +169,30 @@ public function payment_gateways()
             //->where('is_exclusive', '1')
             ->where('expiry_date', '>=', $today) ;
             //->take(1);
+    }
+
+    public function menuList()
+    {
+        //return $this->hasMany('App\Item');
+        //return $this->belongsToMany(\App\RestaurantCategory::class, 'item_categories');
+        $result = $this->hasMany('App\Item')
+            ->join('item_categories', 'item_categories.id', '=', 'items.item_category_id')
+            ->where('is_enabled', '=', '1')
+            ->select('items.*', 'item_categories.name AS category_name', 'item_categories.is_enabled AS is_enabled');
+        return $result;
+
+        /*
+       $items = Item::where('restaurant_id', $restaurant->id)
+           ->join('item_categories', function ($join) {
+               $join->on('items.item_category_id', '=', 'item_categories.id');
+               $join->where('is_enabled', '1');
+           })
+           ->with('addon_categories')
+           ->with(array('addon_categories.addons' => function ($query) {
+               $query->where('is_active', 1);
+           }))
+           ->get(array('items.*', 'item_categories.name as category_name'));
+       */
     }
 
 }

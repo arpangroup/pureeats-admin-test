@@ -371,6 +371,16 @@ class OrderController extends Controller
 
             // Save the order
             Log::channel('orderlog')->info('Saving order........');
+            if($request->screenshot != null) {
+                $imageData = base64_decode($request->screenshot);
+                $source = imagecreatefromstring($imageData);
+                $rotate = imagerotate($source, 0, 0); // if want to rotate the image
+                $filename =  $newOrder->unique_order_id .'_'. time().'_'.  str_random(10). '.jpg';
+                $file = public_path('/images/bill/' . $filename);
+                $imageSave = imagejpeg($rotate, $file, 100);
+                imagedestroy($source);
+                $newOrder->screenshot = $filename;
+            }
             $newOrder->save();
 
             Log::channel('orderlog')->info('Saving order_items........');

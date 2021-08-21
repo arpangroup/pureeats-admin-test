@@ -1366,7 +1366,7 @@ class DeliveryController extends Controller
             return response()->json($response);
 
         }else{
-            if(!$user)throw new AuthenticationException(ErrorCode::PHONE_NOT_EXIST, "Customer not found for " .$request->phone);
+            if(!$deliveryUser)throw new AuthenticationException(ErrorCode::PHONE_NOT_EXIST, "Customer not found for " .$request->phone);
             if(!$request->lat)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "lat should not be null");
             if(!$request->lng)throw new ValidationException(ErrorCode::INVALID_REQUEST_BODY, "lng should not be null");
             throw new AuthenticationException(ErrorCode::BAD_RESPONSE, "Invalid request body");
